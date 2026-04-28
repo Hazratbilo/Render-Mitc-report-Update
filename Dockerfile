@@ -13,8 +13,8 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy csproj and restore dependencies
-COPY ["MITCRMS/MITCRMS.csproj", "MITCRMS/"]
-RUN dotnet restore "MITCRMS/MITCRMS.csproj"
+COPY ["MITCRMS.csproj", "./"]
+RUN dotnet restore "MITCRMS.csproj"
 
 # Copy the rest of the project
 COPY . .
