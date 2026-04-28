@@ -12,15 +12,13 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore dependencies
-COPY ["MITCRMS.csproj", "./"]
+# Copy everything (simpler + safer)
+COPY . .
+
+# Restore
 RUN dotnet restore "MITCRMS.csproj"
 
-# Copy the rest of the project
-COPY . .
-WORKDIR "/src/MITCRMS"
-
-# Build the project
+# Build
 RUN dotnet build "MITCRMS.csproj" -c Release -o /app/build
 
 # ----------------------
