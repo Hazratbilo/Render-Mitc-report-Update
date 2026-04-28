@@ -1,0 +1,192 @@
+﻿@model MITCRMS.Models.DTOs.Department.DepartmentDto
+
+@{
+    ViewData["Title"] = "Department Details";
+}
+
+<div class="container mt-4">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-action="Index" class="text-decoration-none">
+                    <i class="bi bi-grid me-1"></i>Departments
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Department Details</li>
+        </ol>
+    </nav>
+
+    <!-- Error Alert -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-x-circle-fill me-2"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+
+            <!-- Card -->
+            <div class="card shadow-sm border-0">
+
+                <!-- Card Header -->
+                <div class="card-header bg-primary text-white d-flex align-items-center py-3">
+                    <div class="rounded-circle bg-white bg-opacity-25 p-2 me-3">
+                        <i class="bi bi-building fs-4 text-white"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">@Model.DepartmentName</h5>
+                        <small class="opacity-75">Department Information</small>
+                    </div>
+                    <span class="badge bg-white text-primary ms-auto fs-6">
+                        @Model.DepartmentCode
+                    </span>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body p-4">
+                    <div class="row g-4">
+
+                        <!-- Department ID -->
+                        <div class="col-12">
+                            <div class="d-flex align-items-start p-3 bg-light rounded">
+                                <div class="rounded-circle bg-secondary bg-opacity-10 p-2 me-3">
+                                    <i class="bi bi-fingerprint text-secondary fs-5"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                                        Department ID
+                                    </small>
+                                    <p class="mb-0 fw-semibold text-break">@Model.Id</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Name -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start p-3 bg-light rounded h-100">
+                                <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                    <i class="bi bi-building text-primary fs-5"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                                        Department Name
+                                    </small>
+                                    <p class="mb-0 fw-semibold">@Model.DepartmentName</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Code -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start p-3 bg-light rounded h-100">
+                                <div class="rounded-circle bg-success bg-opacity-10 p-2 me-3">
+                                    <i class="bi bi-upc-scan text-success fs-5"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                                        Department Code
+                                    </small>
+                                    <p class="mb-0">
+                                        <span class="badge bg-success fs-6 fw-normal">@Model.DepartmentCode</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Created -->
+                        <div class="col-12">
+                            <div class="d-flex align-items-start p-3 bg-light rounded">
+                                <div class="rounded-circle bg-info bg-opacity-10 p-2 me-3">
+                                    <i class="bi bi-calendar-check text-info fs-5"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">
+                                        Date Created
+                                    </small>
+                                    <p class="mb-0 fw-semibold">
+                                        @Model.DateCreated.ToString("dddd, MMMM dd, yyyy")
+                                        <span class="text-muted fw-normal ms-2" style="font-size: 0.85rem;">
+                                            (@Model.DateCreated.ToString("hh:mm tt"))
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Card Footer — Actions -->
+                <div class="card-footer bg-white border-0 px-4 pb-4 pt-2">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="bi bi-pencil-square me-1"></i> Edit Department
+                        </a>
+                        <button class="btn btn-outline-danger"
+                                onclick="confirmDelete('@Model.Id', '@Model.DepartmentName')">
+                            <i class="bi bi-trash me-1"></i> Delete
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary ms-auto">
+                            <i class="bi bi-arrow-left me-1"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Metadata Footer -->
+            <p class="text-muted text-center mt-3" style="font-size: 0.8rem;">
+                <i class="bi bi-clock-history me-1"></i>
+                Record created on @Model.DateCreated.ToString("MMM dd, yyyy")
+            </p>
+
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-2">
+                        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-danger mb-0">Confirm Delete</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <p class="mb-0">
+                    Are you sure you want to permanently delete
+                    <strong id="deptName" class="text-danger"></strong>?
+                    This action <strong>cannot be undone</strong>.
+                </p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i> Cancel
+                </button>
+                <a id="confirmDeleteBtn" href="#" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i> Yes, Delete
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, name) {
+            document.getElementById('deptName').textContent = name;
+            document.getElementById('confirmDeleteBtn').href = `/Department/Delete/${id}`;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+}

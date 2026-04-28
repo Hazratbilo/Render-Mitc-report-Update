@@ -1,0 +1,44 @@
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateReport(IFormFile file, CreateReportRequestModel model)
+    {
+
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var roleClaim = User.FindFirst(ClaimTypes.Role);
+
+        if (userIdClaim == null || roleClaim == null)
+        {
+            TempData["Error"] = "User information not found. Please login again.";
+            return RedirectToAction("Login", "Account");
+        }
+
+        var userId = Guid.Parse(userIdClaim.Value);
+        var role = roleClaim.Value;
+
+
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        var uploadsPath = Path.Combine(_env.WebRootPath, "reports");
+        Directory.CreateDirectory(uploadsPath);
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var fullPath = Path.Combine(uploadsPath, fileName);
+
+        using var stream = new FileStream(fullPath, FileMode.Create);
+        await file.CopyToAsync(stream);
+
+        var fileUrl = $"{Request.Scheme}://{Request.Host}/reports/{fileName}";
+
+        var result = await _reportServices.CreateReportAsync(fileUrl, model, userId, role);
+
+        if (!result.Status)
+        {
+            TempData["Error"] = result.Message;
+            return View(model);
+        }
+
+        TempData["Success"] = "Report created successfully!";
+        return RedirectToAction("GetMyReports", "Report");
+    }

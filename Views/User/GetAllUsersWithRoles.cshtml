@@ -1,0 +1,154 @@
+﻿@using MITCRMS.Models.DTOs
+@model List<MITCRMS.Models.DTOs.Users.UserDto>
+@{
+    ViewData["Title"] = "Staff Management";
+}
+
+<div class="container-fluid px-4 py-3">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0 fw-semibold">Staff Management</h4>
+            <small class="text-muted">All registered Staff and their assigned roles</small>
+        </div>
+        <a asp-action="CreateUser" asp-controller="User" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Add Staff
+        </a>
+    </div>
+
+    <!-- Search -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <i class="bi bi-search text-muted"></i>
+                <input type="text"
+                       name="search"
+                       value="@ViewBag.SearchTerm"
+                       class="form-control form-control-sm border-0 shadow-none"
+                       placeholder="Search by name or email..." />
+                <button type="submit" class="btn btn-sm btn-outline-secondary px-3">Search</button>
+                @if (!string.IsNullOrWhiteSpace((string)ViewBag.SearchTerm))
+                {
+                    <a asp-action="GetAllUsersWithRoles" asp-controller="User" class="btn btn-sm btn-link text-danger text-decoration-none">Clear</a>
+                }
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-people fs-2 d-block mb-2"></i>
+                    <span>No Staff found.</span>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">S/N</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Department</th>
+                                <th>Roles</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int count = 1;
+                            }
+                            @foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4 text-muted">@count</td>
+
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-circle bg-primary text-white">
+                                                @user.FullName.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <span class="fw-medium">@user.FullName</span>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-muted">@user.Email</td>
+
+                                    <td>
+                                        @{
+                                            var dept = user.Departments?.FirstOrDefault();
+                                        }
+                                        <span class="badge bg-light text-dark border">
+                                            @(dept?.Text ?? "No Department")
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @if (user.Roles.Any())
+                                        {
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="badge rounded-pill me-1
+                                                                                    @(role.Name == "SuperAdmin" ? "bg-danger" :
+                                                                                                                                                                  role.Name == "Manager" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                    @role.Name
+                                </span>
+                                                                }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic small">No roles</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-end pe-4">
+                                        <a asp-action="Details" asp-route-id="@user.UserId"
+                                           class="btn btn-outline-info"
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="DeleteUser" asp-route-id="@user.UserId"
+                                           class="btn btn-outline-danger"
+                                           title="Delete Report">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-4 py-2 text-muted small border-top">
+                    Showing <strong>@Model.Count</strong> user(s)
+                    @if (!string.IsNullOrWhiteSpace((string)ViewBag.SearchTerm))
+                    {
+                        <span>for "<strong>@ViewBag.SearchTerm</strong>"</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Style -->
+<style>
+    .avatar-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+</style>

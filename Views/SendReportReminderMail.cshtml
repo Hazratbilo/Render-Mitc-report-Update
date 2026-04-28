@@ -1,0 +1,42 @@
+@model MITCRMS.Implementation.Messaging.Models.SendReportReminder
+@{
+    Layout = null;
+    // Dynamic color based on urgency in title
+    var headerColor = Model.Title.Contains("Final") ? "#c2410c" : "#1B2A4A";
+}
+<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0; background:#f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" style="background:#f8fafc; padding:40px 15px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" style="background:#ffffff; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding:35px; background: @headerColor; border-radius:12px 12px 0 0; text-align:center;">
+                             <img src="cid:mitc_logo.png" style="height:50px; margin-bottom:10px;" />
+                            <div style="font-size:22px; font-weight:700; color:#ffffff; letter-spacing:-0.025em;">@Model.Title</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px 30px;">
+                            <p style="font-size:16px; color:#1e293b;">Hello <strong>@Model.Name</strong>,</p>
+                            <p style="color:#475569; line-height:1.7; font-size:15px;">@Model.Message</p>
+
+                            <div style="margin:30px 0; text-align:center;">
+                                <a href="https://buildhedge.com"
+                                   style="background:#0f172a; color:#ffffff; padding:16px 30px; border-radius:8px; font-weight:600; text-decoration:none; display:inline-block;">
+                                    @Model.ActionText
+                                </a>
+                            </div>
+                            
+                            <p style="font-size:12px; color:#94a3b8; text-align:center; margin-top:40px;">
+                                This is an automated reminder from the <strong>MITCRMS Lifecycle Engine</strong>.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

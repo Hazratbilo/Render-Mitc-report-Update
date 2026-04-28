@@ -1,0 +1,359 @@
+﻿@model MITCRMS.Models.DTOs.Department.CreateDepartmentRequestModel
+
+@{
+    ViewData["Title"] = "Add Department";
+    ViewData["Breadcrumb"] = "<li class='breadcrumb-item'><a href='/Admin/Departments'>Departments</a></li><li class='breadcrumb-item active'>Add New</li>";
+}
+
+<div class="row">
+    <div class="col-lg-6 col-xl-5 mx-auto">
+        <!-- Alert Messages -->
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-circle me-3 fs-5"></i>
+                    <div>
+                        <strong>Error!</strong> @ViewBag.Error
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (ViewBag.Success != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-3 fs-5"></i>
+                    <div>
+                        <strong>Success!</strong> @ViewBag.Success
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Main Form Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="mb-1 fw-bold text-dark">
+                            <i class="fas fa-building text-primary me-2"></i>
+                            Add New Department
+                        </h5>
+                        <p class="text-muted mb-0 small">Create a new department in the system</p>
+                    </div>
+                    <a asp-action="Index" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <form asp-action="CreateDepartment" method="post" id="departmentForm" novalidate>
+                    <div class="mb-4">
+                        <label asp-for="DepartmentName" class="form-label fw-semibold">
+                            Department Name <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-building text-muted"></i>
+                            </span>
+                            
+                            <input asp-for="DepartmentName"
+                                   class="form-control border-start-0 ps-0"
+                                   id="departmentNameInput"
+                                   placeholder="Enter department name"
+                                   required />
+                        </div>
+                        <span asp-validation-for="DepartmentName" class="text-danger small"></span>
+                        <div class="invalid-feedback d-block" id="customValidation"></div>
+                        <!-- Character Counter -->
+                        <div class="d-flex justify-content-between mt-2">
+                            <small class="text-muted">
+                                <span id="charCount">0</span> / 100 characters
+                            </small>
+                        </div>
+                    </div>
+
+                        <label asp-for="DepartmentCode" class="form-label fw-semibold">
+                            Deparment Code <span class="tect-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="fas fa-building text-muted"></i>
+                            </span>
+
+                            <input asp-for="DepartmentCode"
+                                   class="form-control border-start-0 ps-0"
+                                   id="departmentCodeInput"
+                                   placeholder="Enter department Code"
+                                   required />
+                        </div>
+                        <span asp-validation-for="DepartmentCode" class="text-danger small"></span>
+                        <div class="invalid-feedback d-block" id="customValidation"></div>
+
+
+
+                  
+                    <!-- Form Actions -->
+                    <div class="border-top pt-4">
+                        <div class="d-flex gap-2 justify-content-end">
+                        
+                            <button type="reset" class="btn btn-outline-secondary px-4" id="resetBtn">
+                                <i class="fas fa-redo me-2"></i>Reset
+                            </button>
+                            
+                            <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                                <i class="fas fa-save me-2"></i>Add Department
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Helper Cards -->
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm bg-info bg-opacity-10">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-lightbulb text-info fs-5 me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1 fw-bold text-info">Quick Tip</h6>
+                                <p class="small text-muted mb-0">Use clear, descriptive names that are easy to understand</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm bg-warning bg-opacity-10">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-triangle text-warning fs-5 me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-1 fw-bold text-warning">Important</h6>
+                                <p class="small text-muted mb-0">Department names cannot be duplicated</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // DOM Elements
+        const departmentInput = document.getElementById('departmentNameInput');
+        const charCount = document.getElementById('charCount');
+        const previewName = document.getElementById('previewName');
+        const previewDate = document.getElementById('previewDate');
+        const form = document.getElementById('departmentForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const customValidation = document.getElementById('customValidation');
+        const exampleButtons = document.querySelectorAll('.example-btn');
+
+        // Character Counter
+        departmentInput.addEventListener('input', function() {
+            const length = this.value.length;
+            charCount.textContent = length;
+
+            // Update preview
+            if (this.value.trim()) {
+                previewName.textContent = this.value;
+            } else {
+                previewName.textContent = 'Department Name Preview';
+            }
+
+            // Validate
+            validateInput();
+        });
+
+        // Custom Validation
+        function validateInput() {
+            const value = departmentInput.value.trim();
+            customValidation.textContent = '';
+            departmentInput.classList.remove('is-invalid');
+
+            if (value === '') {
+                departmentInput.classList.add('is-invalid');
+                customValidation.textContent = 'Department name cannot be empty';
+                return false;
+            }
+
+            if (value.length < 2) {
+                departmentInput.classList.add('is-invalid');
+                customValidation.textContent = 'Department name must be at least 2 characters';
+                return false;
+            }
+
+            if (value.length > 100) {
+                departmentInput.classList.add('is-invalid');
+                customValidation.textContent = 'Department name cannot exceed 100 characters';
+                return false;
+            }
+
+            // Check for special characters (allow only letters, numbers, spaces, hyphens, and ampersands)
+            const validPattern = /^[a-zA-Z0-9\s\-&]+$/;
+            if (!validPattern.test(value)) {
+                departmentInput.classList.add('is-invalid');
+                customValidation.textContent = 'Department name can only contain letters, numbers, spaces, hyphens, and ampersands';
+                return false;
+            }
+
+            departmentInput.classList.add('is-valid');
+            return true;
+        }
+
+        // Form Submit
+        form.addEventListener('submit', function(e) {
+            if (!validateInput()) {
+                e.preventDefault();
+                return false;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
+        });
+
+        // Reset Button
+        resetBtn.addEventListener('click', function() {
+            setTimeout(function() {
+                charCount.textContent = '0';
+                previewName.textContent = 'Department Name Preview';
+                customValidation.textContent = '';
+                departmentInput.classList.remove('is-invalid', 'is-valid');
+            }, 10);
+        });
+
+        // Example Buttons
+        exampleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const exampleName = this.getAttribute('data-name');
+                departmentInput.value = exampleName;
+                departmentInput.focus();
+
+                // Trigger input event to update counter and preview
+                const event = new Event('input', { bubbles: true });
+                departmentInput.dispatchEvent(event);
+            });
+        });
+
+        // Auto-dismiss alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert-dismissible');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Focus on input when page loads
+        window.addEventListener('load', function() {
+            departmentInput.focus();
+        });
+
+        // Real-time preview date update
+        setInterval(function() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            previewDate.textContent = now.toLocaleDateString('en-US', options);
+        }, 1000);
+    </script>
+}
+
+<style>
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    }
+
+    .form-control.is-valid {
+        border-color: #28a745;
+    }
+
+        .form-control.is-valid:focus {
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+        }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+        }
+
+    .input-group-text {
+        border: 1px solid #dee2e6;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, blue 100%);
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, blue 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.65;
+            transform: none;
+        }
+
+    .example-btn {
+        transition: all 0.3s ease;
+    }
+
+        .example-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    @@keyframes slideIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .card {
+        animation: slideIn 0.4s ease-out;
+    }
+</style>

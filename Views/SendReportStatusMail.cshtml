@@ -1,0 +1,71 @@
+﻿@model MITCRMS.Implementation.Messaging.Models.SendReportStatus
+@{
+    Layout = null;
+
+    // Dynamic color based on status
+    var headerColor = Model.Status == "Approved" ? "#1B2A4A" : "#dc2626";
+    var statusText = Model.Status == "Approved" ? "APPROVED ✅" : "REJECTED ❌";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<body style="margin:0; background:#f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" style="background:#f8fafc; padding:40px 15px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" style="background:#ffffff; border-radius:12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding:35px; background:@headerColor; border-radius:12px 12px 0 0; text-align:center;">
+                            <img src="cid:mitc_logo.png" style="height:50px; margin-bottom:10px;" />
+                            <div style="font-size:22px; font-weight:700; color:#ffffff;">
+                                Report Status Update
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:40px 30px;">
+
+                            <p style="font-size:16px; color:#1e293b;">
+                                Hello <strong>@Model.Name</strong>,
+                            </p>
+
+                            <p style="color:#475569; line-height:1.7; font-size:15px;">
+                                Your report titled
+                                <strong>@Model.Title</strong>, submitted on
+                                <strong>@Model.SubmittedOn.ToString("MMMM dd, yyyy 'at' hh:mm tt")</strong>, has been
+                                <strong style="color:@headerColor;">@statusText</strong>.
+                            </p>
+
+                            @if (Model.Status == "Rejected")
+                            {
+                                <p style="color:#475569; font-size:14px;">
+                                    Please review and make necessary corrections before resubmitting.
+                                </p>
+                            }
+
+                            <!-- Button -->
+                            <div style="margin:30px 0; text-align:center;">
+                                <a href="@Model.ActionLink"
+                                       style="background:#0f172a; color:#ffffff; padding:16px 30px; border-radius:8px; font-weight:600; text-decoration:none; display:inline-block;">
+                                    View Report
+                                </a>
+                            </div>
+
+                            <!-- Footer -->
+                            <p style="font-size:12px; color:#94a3b8; text-align:center; margin-top:40px;">
+                                This is an automated message from the <strong>MITCRMS Lifecycle Engine</strong>.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

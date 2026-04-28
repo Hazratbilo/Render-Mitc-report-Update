@@ -1,0 +1,202 @@
+﻿@using MITCRMS.Models.DTOs;
+@model List<MITCRMS.Models.DTOs.Report.ReportDto>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Report Management";
+    ViewData["Title"] = "All Staff Reports";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>Report Management Portal
+                    </h4>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown">
+                            <i class="fas fa-filter me-1"></i> Filter Status
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item"
+                                   asp-action="GetAllReports"
+                                   asp-route-status="">
+                                    All Reports
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
+                                   asp-action="GetAllReports"
+                                   asp-route-status="Pending">
+                                    Pending Only
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
+                                   asp-action="GetAllReports"
+                                   asp-route-status="Approved">
+                                    Approved
+                                </a>
+                            </li>
+
+                            <li>
+                                <a class="dropdown-item"
+                                   asp-action="GetAllReports"
+                                   asp-route-status="Rejected">
+                                    Cancelled
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                <div class="card-body">
+                    @* Notification Alerts *@
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%">S/N</th>
+                                        <th style="width: 20%">Report Tittle</th>
+                                        <th style="width: 15%">Full Name</th>
+                                        <th style="width: 15%">Department</th>
+                                        <th style="width: 15%">Submitted On</th>
+                                        <th style="width: 10%" class="text-center">Status</th>
+                                        <th style="width: 20%" class="text-center">Admin Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int count = 1;
+                                    }
+                                    @foreach (var report in Model)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-muted">@count</td>
+                                            <td>
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-bold text-dark">@report.Tittle</span>
+                                                    @if (!string.IsNullOrEmpty(report.FileUrl))
+                                                    {
+                                                        <a href="@report.FileUrl" target="_blank" class="small text-decoration-none">
+                                                            <i class="fas fa-paperclip me-1"></i>View Attachment
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <p class="text-truncate mb-0 small text-muted" style="max-width: 350px;" title="@report.FullName">
+                                                    @report.FullName
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <p class="text-truncate mb-0 small text-muted" style="max-width: 350px;" title="@report">
+                                                    @report.DepartmentName
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <div class="small">
+                                                    <i class="far fa-calendar-alt me-1"></i>@report.DateCreated.ToString("dd MMM yyyy")<br />
+                                                    <i class="far fa-clock me-1 text-muted"></i>@report.DateCreated.ToString("hh:mm tt")
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                @switch (report.Status)
+                                                {
+                                                    case MITCRMS.Models.Enum.ReportStatus.Pending:
+                                                        <span class="badge rounded-pill bg-warning text-dark px-3">Pending</span>
+                                                        break;
+                                                    case MITCRMS.Models.Enum.ReportStatus.Approved:
+                                                        <span class="badge rounded-pill bg-success px-3">Approved</span>
+                                                        break;
+                                                    case MITCRMS.Models.Enum.ReportStatus.Rejected:
+                                                        <span class="badge rounded-pill bg-danger px-3">Rejected</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group shadow-sm">
+                                                    <a asp-action="Details" asp-route-id="@report.Id" class="btn btn-sm btn-outline-secondary" title="Full View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="DownloadPdf" asp-route-id="@report.Id"
+                                                       class="btn btn-outline-warning" title="Download Report">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+
+                                                    @if (report.Status == MITCRMS.Models.Enum.ReportStatus.Pending)
+                                                    {
+                                                        <form asp-action="ApproveReport" asp-route-id="@report.Id" method="post" class="d-inline">
+                                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Approve Report">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        </form>
+                                                        <form asp-action="CancelReport" asp-route-id="@report.Id" method="post" class="d-inline">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Reject Report">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-sm btn-light disabled" title="Action Completed">
+                                                            <i class="fas fa-lock"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        count++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-clipboard-check fa-4x text-light"></i>
+                            </div>
+                            <h4 class="text-muted">Queue is Clear</h4>
+                            <p class="text-muted">There are no reports awaiting review at this time.</p>
+                        </div>
+                    }
+                </div>
+                <div class="card-footer bg-white text-muted small">
+                    <i class="fas fa-info-circle me-1"></i> Admins can only Approve or Reject reports currently in <strong>Pending</strong> status.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-hide alerts
+        setTimeout(function() {
+            var alert = document.querySelector('.alert');
+            if (alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 4000);
+    </script>
+}

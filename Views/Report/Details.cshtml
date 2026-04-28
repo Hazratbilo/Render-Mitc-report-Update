@@ -1,0 +1,43 @@
+﻿@using MITCRMS.Models.DTOs
+@model BaseResponse<MITCRMS.Models.DTOs.Report.ReportDto>
+
+@{
+    var isSuperAdmin = User?.IsInRole("SuperAdmin") == true;
+    Layout = isSuperAdmin ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_StaffLayout.cshtml";
+    ViewData["Title"] = "Report Details";
+}
+
+<h2>@Model.Data.Tittle</h2>
+
+<div class="card p-3">
+    <p>@Model.Data.Content</p>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Data.FileUrl))
+{
+    <div class="mb-3">
+        <img src="@Model.Data.FileUrl"
+             alt="No Image Uploaded"
+             style="max-width: 400px; height: auto;" />
+    </div>
+
+    <a href="@Model.Data.FileUrl"
+       download
+       class="btn btn-success">
+        Download Attachment
+    </a>
+}
+
+<p><b>Created:</b> @Model.Data.DateCreated.ToString("g")</p>
+
+<form asp-action="Details" method="post">
+    <input type="hidden" asp-for="Data.Id" />
+    @if (isSuperAdmin)
+    {
+        <a asp-action="GetAllReports" class="btn btn-secondary">Cancel</a>
+    }
+    else
+    {
+        <a asp-action="GetMyReports" class="btn btn-secondary">Cancel</a>
+    }
+</form>

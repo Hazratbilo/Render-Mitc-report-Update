@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ffee8e7f-49e0-4641-b80a-df13d24c17ff": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:58949;http://localhost:58950"
+    }
+  }
+}

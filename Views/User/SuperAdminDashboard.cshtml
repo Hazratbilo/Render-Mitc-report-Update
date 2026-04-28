@@ -1,0 +1,136 @@
+﻿@using MITCRMS.Models.DTOs.Report
+@using MITCRMS.Models.Enum
+@model IEnumerable<ReportDto>
+
+@{
+    Layout = "_Layout";
+}
+
+<style>
+    .dashboard-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    .stat-card {
+        border-radius: 14px;
+        padding: 26px 28px;
+        position: relative;
+        overflow: hidden;
+        text-decoration: none !important;
+        display: block;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10) !important;
+    }
+
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 3px;
+    }
+
+    .stat-card h6 {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .stat-card h3 {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1;
+        margin: 0;
+    }
+
+    /* Total — dark */
+    .card-total {
+        background: #0f1623;
+        border-color: rgba(255,255,255,0.06);
+    }
+    .card-total h6 { color: rgba(255,255,255,0.45); }
+    .card-total h3 { color: #ffffff; }
+    .card-total::after { background: #4f7cff; }
+
+    /* Pending — amber tint */
+    .card-pending {
+        background: #fffbf0;
+        border-color: #fde68a;
+    }
+    .card-pending h6 { color: #92650a; }
+    .card-pending h3 { color: #f0a500; }
+    .card-pending::after { background: #f0a500; opacity: 0.6; }
+
+    /* Approved — green tint */
+    .card-approved {
+        background: #f0fdf7;
+        border-color: #a7f3d0;
+    }
+    .card-approved h6 { color: #065f46; }
+    .card-approved h3 { color: #0d9a6a; }
+    .card-approved::after { background: #0d9a6a; opacity: 0.6; }
+
+    /* Cancelled — red tint */
+    .card-cancelled {
+        background: #fff5f5;
+        border-color: #fed7d7;
+    }
+    .card-cancelled h6 { color: #9b1c1c; }
+    .card-cancelled h3 { color: #e53e3e; }
+    .card-cancelled::after { background: #e53e3e; opacity: 0.6; }
+</style>
+
+<main id="main" class="main">
+    <div class="pagetitle">
+
+        <h1><i class="bi bi-person-check-fill"></i> Welcome @User.Identity.Name</h1>
+
+        <br />
+
+        <div class="dashboard-cards">
+
+            <a asp-controller="Report"
+                   asp-action="GetAllReports"
+                   asp-route-status=""
+                   class="stat-card card-total shadow-sm">
+                <h6>Total Reports</h6>
+                <h3>@Model?.Count()</h3>
+            </a>
+
+            <a asp-controller="Report"
+                   asp-action="GetAllReports"
+                   asp-route-status="@ReportStatus.Pending"
+                   class="stat-card card-pending shadow-sm">
+                <h6>Pending</h6>
+                <h3>@Model.Count(r => r.Status == ReportStatus.Pending)</h3>
+            </a>
+
+            <a asp-controller="Report"
+                   asp-action="GetAllReports"
+                   asp-route-status="@ReportStatus.Approved"
+                   class="stat-card card-approved shadow-sm">
+                <h6>Approved</h6>
+                <h3>@Model.Count(r => r.Status == ReportStatus.Approved)</h3>
+            </a>
+
+            <a asp-controller="Report"
+                   asp-action="GetAllReports"
+                   asp-route-status="@ReportStatus.Rejected"
+                   class="stat-card card-cancelled shadow-sm">
+                <h6>Cancelled</h6>
+                <h3>@Model.Count(r => r.Status == ReportStatus.Rejected)</h3>
+            </a>
+
+        </div>
+
+    </div>
+</main>

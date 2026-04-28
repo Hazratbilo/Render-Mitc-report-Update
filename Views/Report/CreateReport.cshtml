@@ -1,0 +1,137 @@
+﻿@model MITCRMS.Models.DTOs.Report.CreateReportRequestModel
+
+@{
+        Layout = "~/Views/Shared/_StaffLayout.cshtml";
+    ViewBag.Title = "Staff Dashboard";
+    ViewData["Title"] = "Create Report";
+    var userRole = ViewBag.UserRole as string;
+    var userName = ViewBag.UserName as string;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Create New Report
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@ViewBag.SuccessMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>@ViewBag.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="CreateReport" method="post" enctype="multipart/form-data" id="reportForm">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <!-- Report Title -->
+                        <div class="mb-3">
+                            <label asp-for="Tittle" class="form-label fw-bold">
+                                Report Title <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-heading"></i></span>
+                                <input asp-for="Tittle" class="form-control" placeholder="Enter report title" required maxlength="200" />
+                            </div>
+                            <span asp-validation-for="Tittle" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Report Content -->
+                        <div class="mb-3">
+                            <label asp-for="Content" class="form-label fw-bold">
+                                Report Content <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Content" class="form-control" rows="8" placeholder="Enter detailed report content..." required></textarea>
+                            <span asp-validation-for="Content" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i> Provide a detailed description of the report
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload File</label>
+                            <input asp-for="FileUrl" type="file" name="file" class="form-control" />
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a asp-action="CreateReport" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-paper-plane me-1"></i>Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Information Card -->
+            <div class="card mt-3 border-info">
+                <div class="card-body">
+                    <h6 class="text-info"><i class="fas fa-lightbulb me-2"></i>Report Submission Guidelines</h6>
+                    <ul class="small mb-0">
+                        <li>Ensure all required fields are filled out</li>
+                        <li>Provide a clear and concise title</li>
+                        <li>Include all relevant details in the content</li>
+                        <li>Reports will be reviewed by the department head</li>
+                        <li>You will be notified of the report status</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Form submission handling
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting...';
+        });
+
+        // Character counter for content (optional enhancement)
+        const contentField = document.querySelector('textarea[name="Content"]');
+        if (contentField) {
+            contentField.addEventListener('input', function() {
+                const length = this.value.length;
+                console.log('Content length:', length);
+            });
+        }
+    </script>
+}
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+</style>

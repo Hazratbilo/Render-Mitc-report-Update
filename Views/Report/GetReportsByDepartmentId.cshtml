@@ -1,0 +1,208 @@
+﻿@using MITCRMS.Models.DTOs;
+@model List<MITCRMS.Models.DTOs.Report.ReportDto>
+
+@{
+    Layout = "~/Views/Shared/_StaffLayout.cshtml";
+    ViewBag.Title = "Staff Dashboard";
+    ViewData["Title"] = "My Reports";
+    var userRole = ViewBag.UserRole as string;
+    var userName = ViewBag.UserName as string;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>My Reports
+                    </h4>
+                    <a asp-action="CreateReport" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-1"></i>New Report
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@ViewBag.SuccessMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>@ViewBag.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col" style="width: 5%">#</th>
+                                        <th scope="col" style="width: 20%">
+                                            <i class="fas fa-heading me-1"></i>Title
+                                        </th>
+                                        <th scope="col" style="width: 30%">
+                                            <i class="fas fa-file-alt me-1"></i>Content
+                                        </th>
+                                        <th scope="col" style="width: 30%">
+                                            <i class="fas fa-file-alt me-1"></i>File
+                                        </th>
+                                        <th scope="col" style="width: 20%">
+                                            <i class="fas fa-file-alt me-1"></i>Tutor
+                                        </th>
+                                        <th scope="col" style="width: 10%"> 
+                                            <i class="far fa-calendar-alt me-1"></i>Date
+                                        </th>
+                                        <th scope="col" style="width: 10%" class="text-center">
+                                            <i class="fas fa-info-circle me-1"></i>Status
+                                        </th>
+                                        <th scope="col" style="width: 15%" class="text-center">
+                                            <i class="fas fa-cog me-1"></i>Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int count = 1;
+                                    }
+                                    @foreach (var report in Model)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@count</td>
+                                            <td>
+                                                <strong class="text-primary">@report.Tittle</strong>
+                                            </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 400px;" title="@report.Content">
+                                                    @report.Content
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(report.FileUrl))
+                                                {
+                                                    <a href="@report.FileUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-paperclip"></i> View File
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No file</span>
+                                                }
+                                            </td>
+                                            <td>
+
+                                            <h6>@report.User.FullName</h6>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <i class="far fa-calendar-alt me-1"></i>
+                                                    @report.DateCreated.ToString("MMM dd, yyyy")
+                                                    <br />
+                                                    <i class="far fa-clock me-1"></i>
+                                                    @report.DateCreated.ToString("hh:mm tt")
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                @switch (report.Status)
+                                                {
+                                                    case MITCRMS.Models.Enum.ReportStatus.Pending:
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-hourglass-half me-1"></i>Pending
+                                                        </span>
+                                                        break;
+
+                                                    case MITCRMS.Models.Enum.ReportStatus.Approved:
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check-circle me-1"></i>Approved
+                                                        </span>
+                                                        break;
+
+                                                    case MITCRMS.Models.Enum.ReportStatus.Rejected:
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-times-circle me-1"></i>Cancelled
+                                                        </span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a asp-action="Details" asp-route-id="@report.Id"
+                                                       class="btn btn-outline-info"
+                                                       title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="DownloadPdf" asp-route-id="@report.Id"
+                                                       class="btn btn-outline-warning"
+                                                       title="Download Report">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                    @if (report.Status == MITCRMS.Models.Enum.ReportStatus.Pending)
+                                                    {
+                                                        <a asp-action="DeleteReport" asp-route-id="@report.Id"
+                                                           class="btn btn-outline-danger"
+                                                           title="Delete Report">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        count++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Total Reports: <strong class="text-primary">@Model.Count()</strong>
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Reports Found</h5>
+                            <p class="text-muted">You haven't created any reports yet.</p>
+                            <a asp-action="CreateReport" class="btn btn-primary mt-3">
+                                <i class="fas fa-plus me-2"></i>Create Your First Report
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').alert('close');
+        }, 5000);
+
+        // Delete confirmation
+        function confirmDelete(reportId, reportTitle) {
+            document.getElementById('reportTitle').textContent = reportTitle;
+            document.getElementById('deleteForm').action = '@Url.Action("DeleteReport")/' + reportId;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+
+        // Tooltip initialization (if needed)
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    </script>
+}

@@ -1,0 +1,44 @@
+﻿@using MITCRMS.Models.DTOs;
+@model BaseResponse<MITCRMS.Models.DTOs.Report.ReportDto>
+
+@{
+        Layout = "~/Views/Shared/_StaffLayout.cshtml";
+    ViewBag.Title = "Staff Dashboard";
+   ViewData["Title"] = "My Reports";
+}
+<h2>@ViewData["Title"]</h2>
+<h4>Are you sure you want to delete this Report?</h4>
+<div class="p-3">
+<h2>@Model.Data.Tittle</h2>
+</div>
+
+<div class="card p-3">
+    <p>@Model.Data.Content</p>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Data.FileUrl))
+{
+    <div class="mb-3">
+        <img src="@Model.Data.FileUrl"
+             alt="No Image Uploaded"
+             style="max-width: 400px; height: auto;" />
+    </div>
+
+    <a href="@Model.Data.FileUrl"
+       download
+       class="btn btn-success">
+        Download Attachment
+    </a>
+}
+<p><b>Created:</b> @Model.Data.DateCreated.ToString("g")</p>
+
+
+<form asp-action="DeleteReport" method="post">
+    <input type="hidden" asp-for="@Model.Data.Id" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+
+
+    <a asp-action="GetMyReports" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+
+

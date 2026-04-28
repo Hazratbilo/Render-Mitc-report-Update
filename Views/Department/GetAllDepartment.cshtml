@@ -1,0 +1,65 @@
+﻿@using MITCRMS.Models.DTOs
+@model IEnumerable<MITCRMS.Models.DTOs.Department.DepartmentDto>
+@{
+    ViewData["Title"] = "Departments";
+}
+
+<div class="container mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0 fw-bold">Departments</h2>
+            <small class="text-muted">Manage all departments in the system</small>
+        </div>
+        <a asp-action="CreateDepartment" asp-controller="Department" class="menu-link">
+            <i class="bi bi-plus-circle me-1"></i> Add Department
+        </a>
+    </div>
+
+    <!-- Table -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">S/N</th>
+                            <th scope="col">Department Name</th>
+                            <th scope="col">Department Code</th>
+                            <th scope="col">Date Created</th>
+                            @* <th scope="col" class="text-center">Actions</th> *@
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int count = 1;
+                        }
+                        @foreach (var department in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@count</td>
+                                <td class="fw-semibold">@department.DepartmentName</td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @department.DepartmentCode?.ToUpper()
+                                    </span>
+                                </td>
+
+                                <td>@department.DateCreated.ToString("MMM dd, yyyy")</td>
+                              
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Count -->
+            <div class="card-footer text-muted small">
+                Total: <strong>@Model.Count()</strong> department(s) found
+            </div>
+        </div>
+    }
+
+</div>
