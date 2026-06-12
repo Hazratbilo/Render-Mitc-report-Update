@@ -63,10 +63,33 @@ namespace MITCRMS.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginRequestModel model)
         {
-            var loginResponse = await _userService.LoginAsync(model, CancellationToken.None);
-            var checkRole = "";
-            if (loginResponse.Status)
+            if (model == null)
             {
+                ViewBag.ErrorMessage = "Invalid login request.";
+                return View(model);
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Email))
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Password))
+            {
+                ModelState.AddModelError(nameof(model.Password), "Password is required.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                var loginResponse = await _userService.LoginAsync(model, CancellationToken.None);
+                var checkRole = "";
+                if (loginResponse.Status)
+                {
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, loginResponse.Data.FirstName),
@@ -96,9 +119,16 @@ namespace MITCRMS.Controllers
                 return RedirectToAction("StaffDashboard", "User");
 
             }
-            else
+                else
+                {
+                    ViewBag.ErrorMessage = loginResponse.Message;
+                    return View(model);
+                }
+            }
+            catch (Exception ex)
             {
-                ViewBag.ErrorMessage = loginResponse.Message;
+                _logger.LogError(ex, "Unhandled exception during login");
+                ViewBag.ErrorMessage = "An error occurred while attempting to sign in. Please try again.";
                 return View(model);
             }
 
