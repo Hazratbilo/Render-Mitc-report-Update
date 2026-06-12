@@ -83,7 +83,7 @@
                     <button class="staff-portal-menu-toggle" type="button" id="staffPortalMenuToggle" aria-label="Toggle menu">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
-                    <a asp-controller="User" asp-action="StaffDashboard" class="staff-portal-header-title text-decoration-none">Reporting System</a>
+                    @* <a asp-controller="User" asp-action="StaffDashboard" class="staff-portal-header-title text-decoration-none">Reporting System</a> *@
                     <form asp-controller="Report" asp-action="GetMyReports" method="get" class="staff-portal-search">
                         <span class="material-symbols-outlined">search</span>
                         <input type="text" name="search" value="@currentSearch" placeholder="Search reports, submissions, or activity..." />
