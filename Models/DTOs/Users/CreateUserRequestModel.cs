@@ -19,7 +19,8 @@ namespace MITCRMS.Models.DTOs.Users
         public string Email { get; set; }
 #pragma warning restore CS8618
 #pragma warning disable CS8618
-        public List<SelectListItem> Departments { get; set; }
+
+        //public List<SelectListItem> Departments { get; set; }
 #pragma warning restore CS8618 
         public string PasswordHash { get; set; }
         public string ConfirmPassword { get; set; }
