@@ -68,7 +68,8 @@ namespace MITCRMS.Persistence.Context
                 {
                     Id = SuperadminDeptId,
                     DepartmentName = "Director of Studies",
-                    DepartmentCode = "D.O.S-001"
+                    DepartmentCode = "D.O.S-001",
+                    DateCreated = DateTime.SpecifyKind(new DateTime(2026, 1, 10), DateTimeKind.Utc)
                 };
 
             

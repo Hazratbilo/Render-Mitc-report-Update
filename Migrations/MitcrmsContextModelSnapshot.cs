@@ -47,7 +47,7 @@ namespace MITCRMS.Migrations
                         new
                         {
                             Id = new Guid("c8f2e7bb-9f34-4b97-8b7c-1a5e46c77e42"),
-                            DateCreated = new DateTime(2026, 6, 12, 12, 35, 58, 18, DateTimeKind.Utc).AddTicks(8973),
+                            DateCreated = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             DepartmentCode = "D.O.S-001",
                             DepartmentName = "Director of Studies"
                         });

@@ -124,7 +124,7 @@ namespace MITCRMS.Migrations
             migrationBuilder.InsertData(
                 table: "Departments",
                 columns: new[] { "Id", "DateCreated", "DepartmentCode", "DepartmentName" },
-                values: new object[] { new Guid("c8f2e7bb-9f34-4b97-8b7c-1a5e46c77e42"), new DateTime(2026, 6, 12, 12, 35, 58, 18, DateTimeKind.Utc).AddTicks(8973), "D.O.S-001", "Director of Studies" });
+                values: new object[] { new Guid("c8f2e7bb-9f34-4b97-8b7c-1a5e46c77e42"), new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc), "D.O.S-001", "Director of Studies" });
 
             migrationBuilder.InsertData(
                 table: "Roles",
