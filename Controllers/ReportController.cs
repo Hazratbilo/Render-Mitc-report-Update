@@ -151,7 +151,7 @@ namespace MITCRMS.Controllers
       
         [HttpGet]
         [Authorize(Roles = "Tutor,Hod,Bursar,Admin")]
-        public async Task<IActionResult> GetMyReports()
+        public async Task<IActionResult> GetMyReports(string? status, string? search)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
@@ -165,12 +165,31 @@ namespace MITCRMS.Controllers
             }
 
             var resp = await _reportServices.GetMyReportsAsync(userId);
+            var reports = resp.Data ?? new List<ReportDto>();
 
-            return View(resp.Data);
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ReportStatus>(status, true, out var parsedStatus))
+            {
+                reports = reports.Where(r => r.Status == parsedStatus).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                reports = reports.Where(r =>
+                    (!string.IsNullOrWhiteSpace(r.Tittle) && r.Tittle.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(r.Content) && r.Content.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(r.DepartmentName) && r.DepartmentName.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            ViewBag.StatusFilter = status;
+            ViewBag.SearchTerm = search;
+
+            return View(reports);
         }
         [HttpGet]
         [Authorize(Roles = "Hod")]
-        public async Task<IActionResult>GetReportsByDepartmentId()
+        public async Task<IActionResult>GetReportsByDepartmentId(string? status, string? search)
         {
             var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
 
@@ -185,7 +204,28 @@ namespace MITCRMS.Controllers
             var resp = await _reportServices.GetAllReportsByDepartmentIdAsync(deptartmentId, CancellationToken.None);
             if (!resp.Status || resp.Data == null)
                 return NotFound(resp.Message);
-            return View(resp.Data);
+
+            var reports = resp.Data;
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ReportStatus>(status, true, out var parsedStatus))
+            {
+                reports = reports.Where(r => r.Status == parsedStatus).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                reports = reports.Where(r =>
+                    (!string.IsNullOrWhiteSpace(r.Tittle) && r.Tittle.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(r.Content) && r.Content.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (r.User != null && !string.IsNullOrWhiteSpace(r.User.FullName) && r.User.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            ViewBag.StatusFilter = status;
+            ViewBag.SearchTerm = search;
+
+            return View(reports);
         }
 
         [HttpGet]
@@ -277,7 +317,7 @@ namespace MITCRMS.Controllers
             return input;
         }
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> GetAllReports(string status)
+        public async Task<IActionResult> GetAllReports(string? status, string? search)
         {
             var reports = await _reportServices.GetAllReportsAsync();
             if (!string.IsNullOrEmpty(status))
@@ -294,7 +334,19 @@ namespace MITCRMS.Controllers
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                reports = reports.Where(r =>
+                    (!string.IsNullOrWhiteSpace(r.Tittle) && r.Tittle.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(r.FullName) && r.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(r.DepartmentName) && r.DepartmentName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(r.Content) && r.Content.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
             ViewBag.StatusFilter = status;
+            ViewBag.SearchTerm = search;
 
             return View(reports);
         }

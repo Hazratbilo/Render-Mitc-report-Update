@@ -1,208 +1,163 @@
-﻿@using MITCRMS.Models.DTOs;
+@using MITCRMS.Models.DTOs
+@using MITCRMS.Models.Enum
 @model List<MITCRMS.Models.DTOs.Report.ReportDto>
 
 @{
     Layout = "~/Views/Shared/_StaffLayout.cshtml";
-    ViewBag.Title = "Staff Dashboard";
-    ViewData["Title"] = "My Reports";
-    var userRole = ViewBag.UserRole as string;
-    var userName = ViewBag.UserName as string;
+    ViewData["Title"] = "Department Reports";
+
+    var reports = Model ?? new List<MITCRMS.Models.DTOs.Report.ReportDto>();
+    var currentStatus = ViewBag.StatusFilter as string ?? string.Empty;
+    var currentSearch = ViewBag.SearchTerm as string ?? string.Empty;
+    var totalReports = reports.Count;
+    var pendingReports = reports.Count(r => r.Status == ReportStatus.Pending);
+    var approvedReports = reports.Count(r => r.Status == ReportStatus.Approved);
+    var rejectedReports = reports.Count(r => r.Status == ReportStatus.Rejected);
+    var recentContributors = reports
+        .Select(r => r.User?.FullName ?? r.FullName)
+        .Where(n => !string.IsNullOrWhiteSpace(n))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Count();
 }
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-clipboard-list me-2"></i>My Reports
-                    </h4>
-                    <a asp-action="CreateReport" class="btn btn-light btn-sm">
-                        <i class="fas fa-plus me-1"></i>New Report
-                    </a>
-                </div>
-                <div class="card-body">
-                    @if (!string.IsNullOrEmpty(ViewBag.SuccessMessage))
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>@ViewBag.SuccessMessage
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i>@ViewBag.ErrorMessage
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-
-                    @if (Model != null && Model.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped align-middle">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th scope="col" style="width: 5%">#</th>
-                                        <th scope="col" style="width: 20%">
-                                            <i class="fas fa-heading me-1"></i>Title
-                                        </th>
-                                        <th scope="col" style="width: 30%">
-                                            <i class="fas fa-file-alt me-1"></i>Content
-                                        </th>
-                                        <th scope="col" style="width: 30%">
-                                            <i class="fas fa-file-alt me-1"></i>File
-                                        </th>
-                                        <th scope="col" style="width: 20%">
-                                            <i class="fas fa-file-alt me-1"></i>Tutor
-                                        </th>
-                                        <th scope="col" style="width: 10%"> 
-                                            <i class="far fa-calendar-alt me-1"></i>Date
-                                        </th>
-                                        <th scope="col" style="width: 10%" class="text-center">
-                                            <i class="fas fa-info-circle me-1"></i>Status
-                                        </th>
-                                        <th scope="col" style="width: 15%" class="text-center">
-                                            <i class="fas fa-cog me-1"></i>Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{
-                                        int count = 1;
-                                    }
-                                    @foreach (var report in Model)
-                                    {
-                                        <tr>
-                                            <td class="fw-bold">@count</td>
-                                            <td>
-                                                <strong class="text-primary">@report.Tittle</strong>
-                                            </td>
-                                            <td>
-                                                <div class="text-truncate" style="max-width: 400px;" title="@report.Content">
-                                                    @report.Content
-                                                </div>
-                                            </td>
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(report.FileUrl))
-                                                {
-                                                    <a href="@report.FileUrl" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-paperclip"></i> View File
-                                                    </a>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">No file</span>
-                                                }
-                                            </td>
-                                            <td>
-
-                                            <h6>@report.User.FullName</h6>
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    <i class="far fa-calendar-alt me-1"></i>
-                                                    @report.DateCreated.ToString("MMM dd, yyyy")
-                                                    <br />
-                                                    <i class="far fa-clock me-1"></i>
-                                                    @report.DateCreated.ToString("hh:mm tt")
-                                                </small>
-                                            </td>
-                                            <td class="text-center">
-                                                @switch (report.Status)
-                                                {
-                                                    case MITCRMS.Models.Enum.ReportStatus.Pending:
-                                                        <span class="badge bg-warning text-dark">
-                                                            <i class="fas fa-hourglass-half me-1"></i>Pending
-                                                        </span>
-                                                        break;
-
-                                                    case MITCRMS.Models.Enum.ReportStatus.Approved:
-                                                        <span class="badge bg-success">
-                                                            <i class="fas fa-check-circle me-1"></i>Approved
-                                                        </span>
-                                                        break;
-
-                                                    case MITCRMS.Models.Enum.ReportStatus.Rejected:
-                                                        <span class="badge bg-danger">
-                                                            <i class="fas fa-times-circle me-1"></i>Cancelled
-                                                        </span>
-                                                        break;
-                                                }
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a asp-action="Details" asp-route-id="@report.Id"
-                                                       class="btn btn-outline-info"
-                                                       title="View Details">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a asp-action="DownloadPdf" asp-route-id="@report.Id"
-                                                       class="btn btn-outline-warning"
-                                                       title="Download Report">
-                                                        <i class="fas fa-download"></i>
-                                                    </a>
-                                                    @if (report.Status == MITCRMS.Models.Enum.ReportStatus.Pending)
-                                                    {
-                                                        <a asp-action="DeleteReport" asp-route-id="@report.Id"
-                                                           class="btn btn-outline-danger"
-                                                           title="Delete Report">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
-                                                    }
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        count++;
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <p class="text-muted mb-0">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Total Reports: <strong class="text-primary">@Model.Count()</strong>
-                            </p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5">
-                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                            <h5 class="text-muted">No Reports Found</h5>
-                            <p class="text-muted">You haven't created any reports yet.</p>
-                            <a asp-action="CreateReport" class="btn btn-primary mt-3">
-                                <i class="fas fa-plus me-2"></i>Create Your First Report
-                            </a>
-                        </div>
-                    }
-                </div>
-            </div>
+<section class="myreports-page">
+    <div class="myreports-header">
+        <div>
+            <h1 class="myreports-title">Department Reports</h1>
+            <p class="myreports-subtitle">Review all report submissions within your department and monitor team reporting progress.</p>
+        </div>
+        <div class="myreports-header-actions">
+            <a asp-action="CreateReport" class="myreports-primary-button">
+                <span class="material-symbols-outlined">add</span>
+                <span>New Report</span>
+            </a>
         </div>
     </div>
-</div>
 
-@section Scripts {
-    <script>
-        // Auto-dismiss alerts after 5 seconds
-        setTimeout(function() {
-            $('.alert').alert('close');
-        }, 5000);
+    <section class="myreports-summary-grid">
+        <div class="myreports-summary-card">
+            <span class="myreports-summary-label">Department Reports</span>
+            <div class="myreports-summary-value">@totalReports</div>
+            <p class="myreports-summary-note">Current report records across your department.</p>
+        </div>
+        <div class="myreports-summary-card">
+            <span class="myreports-summary-label">Pending Review</span>
+            <div class="myreports-summary-value text-primary">@pendingReports</div>
+            <p class="myreports-summary-note">Still waiting for administrative approval.</p>
+        </div>
+        <div class="myreports-summary-card">
+            <span class="myreports-summary-label">Approved</span>
+            <div class="myreports-summary-value text-success">@approvedReports</div>
+            <p class="myreports-summary-note">Reports already reviewed and accepted.</p>
+        </div>
+        <div class="myreports-summary-card">
+            <span class="myreports-summary-label">Contributors</span>
+            <div class="myreports-summary-value">@recentContributors</div>
+            <p class="myreports-summary-note">Staff members represented in these submissions.</p>
+        </div>
+    </section>
 
-        // Delete confirmation
-        function confirmDelete(reportId, reportTitle) {
-            document.getElementById('reportTitle').textContent = reportTitle;
-            document.getElementById('deleteForm').action = '@Url.Action("DeleteReport")/' + reportId;
-            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            deleteModal.show();
+    <section class="myreports-filter-card">
+        <form method="get" asp-action="GetReportsByDepartmentId" class="myreports-filter-form">
+            <div class="myreports-filter-search">
+                <label for="search" class="myreports-filter-label">Search</label>
+                <input id="search" name="search" value="@currentSearch" type="text" placeholder="Search titles, content, or tutor name..." />
+            </div>
+            <div class="myreports-filter-select">
+                <label for="status" class="myreports-filter-label">Status</label>
+                <select id="status" name="status">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(currentStatus))">All Reports</option>
+                    <option value="Approved" selected="@(currentStatus == "Approved")">Approved</option>
+                    <option value="Pending" selected="@(currentStatus == "Pending")">Pending</option>
+                    <option value="Rejected" selected="@(currentStatus == "Rejected")">Rejected</option>
+                </select>
+            </div>
+            <div class="myreports-filter-actions">
+                <a asp-action="GetReportsByDepartmentId" class="myreports-clear-link">Clear Filters</a>
+                <button type="submit" class="myreports-apply-button">Apply</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="myreports-table-card">
+        @if (reports.Any())
+        {
+            <div class="table-responsive">
+                <table class="myreports-table">
+                    <thead>
+                        <tr>
+                            <th>Report ID</th>
+                            <th>Title</th>
+                            <th>Contributor</th>
+                            <th>Date Submitted</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in reports.OrderByDescending(r => r.DateCreated))
+                        {
+                            var statusClass = report.Status switch
+                            {
+                                ReportStatus.Approved => "myreports-badge-approved",
+                                ReportStatus.Rejected => "myreports-badge-rejected",
+                                _ => "myreports-badge-pending"
+                            };
+                            var contributor = report.User?.FullName ?? report.FullName ?? "Unknown staff";
+                            <tr>
+                                <td class="myreports-id">#REP-@report.Id.ToString().Substring(0, 6).ToUpperInvariant()</td>
+                                <td>
+                                    <div class="myreports-title-wrap">
+                                        <span class="myreports-title-text">@report.Tittle</span>
+                                        <span class="myreports-title-meta">@report.DepartmentName</span>
+                                    </div>
+                                </td>
+                                <td class="myreports-date">@contributor</td>
+                                <td class="myreports-date">@report.DateCreated.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <span class="myreports-badge @statusClass">@report.Status</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="myreports-actions">
+                                        <a asp-action="Details" asp-route-id="@report.Id" class="myreports-link-button">
+                                            <span>View Details</span>
+                                            <span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>
+                                        </a>
+                                        <a asp-action="DownloadPdf" asp-route-id="@report.Id" class="myreports-icon-button" title="Download PDF">
+                                            <span class="material-symbols-outlined">download</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="myreports-table-footer">
+                <span>Showing <strong>@reports.Count</strong> department result(s)</span>
+            </div>
         }
+        else
+        {
+            <div class="myreports-empty-state">
+                <span class="material-symbols-outlined">folder_open</span>
+                <h3>No department reports found</h3>
+                <p>No report currently matches the selected department filters.</p>
+            </div>
+        }
+    </section>
 
-        // Tooltip initialization (if needed)
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
-    </script>
-}
+    <section class="myreports-help-grid">
+        <div class="myreports-help-card myreports-help-primary">
+            <div class="myreports-help-copy">
+                <h3>Department overview in one place</h3>
+                <p>Use this view to follow contributor activity, spot pending submissions early, and keep your department reporting cycle on track.</p>
+                <a asp-action="CreateReport" class="myreports-help-button">Create Another Report</a>
+            </div>
+            <div class="myreports-help-icon">
+                <span class="material-symbols-outlined">groups</span>
+            </div>
+        </div>
+    </section>
+</section>

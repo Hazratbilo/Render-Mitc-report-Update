@@ -1,96 +1,145 @@
-﻿@using MITCRMS.Models.DTOs
+@using MITCRMS.Models.DTOs
 @model BaseResponse<MITCRMS.Models.DTOs.Users.UserDto>
 
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewBag.Title = "Delete Staff";
     ViewData["Title"] = "Delete Staff";
 }
 
-<div class="container mt-4">
-
-    <h2>@ViewData["Title"]</h2>
-    <h4 class="text-danger">Are you sure you want to delete this staff member?</h4>
-
-    <div class="card shadow-sm mt-3">
-        <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">
-                <i class="bi bi-person-x me-2"></i>@Model.Data.FullName
-            </h5>
+<div class="container-fluid px-4 py-3">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title text-danger">Delete Staff Account</h1>
+            <p class="admin-page-subtitle text-danger-emphasis fw-semibold">Are you sure you want to permanently delete this staff member? This action is irreversible.</p>
         </div>
-
-        <div class="card-body">
-
-            <div class="p-3">
-                <h5>@Model.Data.FullName</h5>
-            </div>
-
-            <dl class="row px-3">
-                <dt class="col-sm-3 text-muted">First Name</dt>
-                <dd class="col-sm-9">@Model.Data.FirstName</dd>
-
-                <dt class="col-sm-3 text-muted">Last Name</dt>
-                <dd class="col-sm-9">@Model.Data.LastName</dd>
-
-                <dt class="col-sm-3 text-muted">Email</dt>
-                <dd class="col-sm-9">
-                    <a href="mailto:@Model.Data.Email">@Model.Data.Email</a>
-                </dd>
-
-                <dt class="col-sm-3 text-muted">Phone</dt>
-                <dd class="col-sm-9">
-                    <a href="tel:@Model.Data.PhoneNumber">@Model.Data.PhoneNumber</a>
-                </dd>
-
-                <dt class="col-sm-3 text-muted">Address</dt>
-                <dd class="col-sm-9">
-                    @(string.IsNullOrWhiteSpace(Model.Data.Address) ? "N/A" : Model.Data.Address)
-                </dd>
-
-                <dt class="col-sm-3 text-muted">Department</dt>
-                <dd class="col-sm-9">
-                    @if (Model.Data.Departments != null && Model.Data.Departments.Any())
-                    {
-                        <span class="badge bg-info text-dark">
-                            @Model.Data.Departments.First().Text
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="text-muted fst-italic">No Department</span>
-                    }
-                </dd>
-
-                <dt class="col-sm-3 text-muted">Roles</dt>
-                <dd class="col-sm-9">
-                    @if (Model.Data.Roles != null && Model.Data.Roles.Any())
-                    {
-                        foreach (var role in Model.Data.Roles)
-                        {
-                            <span class="badge bg-primary me-1">@role.Name</span>
-                        }
-                    }
-                    else
-                    {
-                        <span class="text-muted fst-italic">No Roles Assigned</span>
-                    }
-                </dd>
-            </dl>
-
-        </div>
-
-        <div class="card-footer d-flex justify-content-between align-items-center">
-            <form asp-action="DeleteUser" method="post">
-                <input type="hidden" asp-for="@Model.Data.Id" />
-                <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-trash me-1"></i>Delete
-                </button>
-            </form>
-            <a asp-action="Details" asp-route-id="@Model.Data.Id" class="btn btn-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Cancel
-            </a>
-        </div>
-
+        <a asp-action="GetAllUsersWithRoles" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Back to Staff Directory</span>
+        </a>
     </div>
 
+    <div class="row g-4 mt-1">
+        <div class="col-xl-8 col-lg-7">
+            <div class="admin-panel">
+                <div class="admin-panel-header bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25 py-3 px-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="admin-avatar text-white bg-danger d-inline-flex align-items-center justify-content-center fw-bold fs-4" style="width: 54px; height: 54px; border-radius: 14px;">
+                            @((Model.Data.FullName ?? "U").Substring(0, 1).ToUpper())
+                        </div>
+                        <div>
+                            <h4 class="admin-panel-title text-danger mb-1">@Model.Data.FullName</h4>
+                            <p class="text-muted small mb-0">Confirm deletion of this account</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">First Name</span>
+                                <span class="fs-6 fw-medium text-dark">@Model.Data.FirstName</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Last Name</span>
+                                <span class="fs-6 fw-medium text-dark">@Model.Data.LastName</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Email Address</span>
+                                <span class="fs-6 fw-medium text-dark">
+                                    <a href="mailto:@Model.Data.Email" class="text-decoration-none">@Model.Data.Email</a>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Phone Number</span>
+                                <span class="fs-6 fw-medium text-dark">
+                                    <a href="tel:@Model.Data.PhoneNumber" class="text-decoration-none">@Model.Data.PhoneNumber</a>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Department</span>
+                                <div>
+                                    @if (Model.Data.Departments != null && Model.Data.Departments.Any())
+                                    {
+                                        <span class="badge bg-light text-dark border px-3 py-2">
+                                            @Model.Data.Departments.First().Text
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">No Department Assigned</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Roles Assigned</span>
+                                <div>
+                                    @if (Model.Data.Roles != null && Model.Data.Roles.Any())
+                                    {
+                                        foreach (var role in Model.Data.Roles)
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 me-1">@role.Name</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic">No Roles Assigned</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <span class="d-block text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.75rem; letter-spacing: 0.05em;">Address</span>
+                                <span class="fs-6 text-dark">@(string.IsNullOrWhiteSpace(Model.Data.Address) ? "N/A" : Model.Data.Address)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="DeleteUser" method="post" class="mt-4 pt-3 border-top d-flex gap-2 justify-content-end">
+                        <input type="hidden" asp-for="@Model.Data.Id" />
+                        <a asp-action="Details" asp-route-id="@Model.Data.Id" class="btn btn-light px-4">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4 d-inline-flex align-items-center gap-2" style="box-shadow: 0 12px 22px rgba(220, 53, 69, 0.25);">
+                            <span class="material-symbols-outlined fs-5">delete</span>
+                            <span>Yes, Delete Account</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="admin-panel p-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-4 mb-4">
+                <h5 class="text-danger fw-bold d-flex align-items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined">warning</span>
+                    <span>Destructive Action</span>
+                </h5>
+                <ul class="text-danger-emphasis small ps-3 mb-0">
+                    <li class="mb-2">The staff member will lose immediate access to the system.</li>
+                    <li class="mb-2">Historical reports submitted by this user will remain in the system but will no longer link back to an active user profile.</li>
+                    <li>This operation is final and cannot be reverted.</li>
+                </ul>
+            </div>
+
+            <div class="admin-panel p-4 bg-white border border-light-subtle rounded-4">
+                <h5 class="text-primary fw-bold d-flex align-items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined">help_outline</span>
+                    <span>Need to reassign?</span>
+                </h5>
+                <p class="text-muted small mb-0">
+                    If this staff member is moving to a different role or department, you may want to modify their roles or update their department settings rather than deleting their account.
+                </p>
+            </div>
+        </div>
+    </div>
 </div>

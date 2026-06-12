@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using Mitc_report_Update.Interface.MailingService;
 using MITCRMS.Implementation.Repository;
@@ -50,6 +50,16 @@ namespace MITCRMS.Implementation.Services
                 return new BaseResponse<bool>
                 {
                     Message = $"Report with Id: '{id}' cannot be found",
+                    Status = false
+                };
+            }
+
+            if (report.Status == ReportStatus.Rejected)
+            {
+                _logger.LogError($"Report with Id: '{id}' has already been rejected and cannot be approved");
+                return new BaseResponse<bool>
+                {
+                    Message = "Rejected reports cannot be approved",
                     Status = false
                 };
             }
@@ -349,6 +359,18 @@ namespace MITCRMS.Implementation.Services
 
     if (report == null)
         return false;
+
+    if (report.Status == ReportStatus.Rejected && status == ReportStatus.Approved)
+    {
+        _logger.LogError($"Report with Id: '{id}' has already been rejected and cannot be approved");
+        return false;
+    }
+
+    if (report.Status == ReportStatus.Approved && status == ReportStatus.Rejected)
+    {
+        _logger.LogError($"Report with Id: '{id}' has already been approved and cannot be rejected");
+        return false;
+    }
 
     report.Status = status;
 

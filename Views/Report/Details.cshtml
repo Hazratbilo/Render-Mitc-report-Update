@@ -1,43 +1,502 @@
-﻿@using MITCRMS.Models.DTOs
+@using MITCRMS.Models.DTOs
+@using MITCRMS.Models.Enum
 @model BaseResponse<MITCRMS.Models.DTOs.Report.ReportDto>
 
 @{
     var isSuperAdmin = User?.IsInRole("SuperAdmin") == true;
     Layout = isSuperAdmin ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_StaffLayout.cshtml";
     ViewData["Title"] = "Report Details";
+
+    var report = Model.Data;
+    var fileUrl = report.FileUrl ?? string.Empty;
+    var extension = string.IsNullOrWhiteSpace(fileUrl) ? string.Empty : System.IO.Path.GetExtension(fileUrl).ToLowerInvariant();
+    var isImage = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" }.Contains(extension);
+    // var statusClass = report.Status switch
+    // {
+    //     ReportStatus.Approved => "report-status-approved",
+    //     ReportStatus.Rejected => "report-status-rejected",
+    //     _ => "report-status-pending"
+    // };
+    var backAction = isSuperAdmin ? "GetAllReports" : "GetMyReports";
+    var submittedBy = !string.IsNullOrWhiteSpace(report.FullName) ? report.FullName : report.User?.FullName ?? "Unknown staff";
 }
 
-<h2>@Model.Data.Tittle</h2>
+<section class="report-details-page">
+    <div class="report-details-grid">
+        <div class="report-details-main">
+            <section class="report-card report-card-header">
+                <div class="report-head-top">
+                    <div>
+                        <span class="report-id">Report #@report.Id.ToString().Substring(0, 8).ToUpperInvariant()</span>
+                        <h1 class="report-title">@report.Tittle</h1>
+                    </div>
+                    @* <span class="report-status-chip @statusClass">@report.Status</span> *@
+                </div>
 
-<div class="card p-3">
-    <p>@Model.Data.Content</p>
-</div>
+                <div class="report-meta-grid @(isSuperAdmin ? "" : "report-meta-grid-staff")">
+                    @if (isSuperAdmin)
+                    {
+                        <div>
+                            <p class="report-meta-label">Submitted by</p>
+                            <p class="report-meta-value">@submittedBy</p>
+                        </div>
+                    }
+                    <div>
+                        <p class="report-meta-label">Date Submitted</p>
+                        <p class="report-meta-value">@report.DateCreated.ToString("dd MMM yyyy")</p>
+                    </div>
+                    <div>
+                        <p class="report-meta-label">Department</p>
+                        <p class="report-meta-value">@report.DepartmentName</p>
+                    </div>
+                    <div>
+                        <p class="report-meta-label">Priority</p>
+                        <p class="report-meta-value report-priority">High</p>
+                    </div>
+                </div>
+            </section>
 
-@if (!string.IsNullOrEmpty(Model.Data.FileUrl))
-{
-    <div class="mb-3">
-        <img src="@Model.Data.FileUrl"
-             alt="No Image Uploaded"
-             style="max-width: 400px; height: auto;" />
+            <section class="report-card">
+                <h2 class="report-section-title">Executive Summary</h2>
+                <div class="report-content">
+                    @foreach (var paragraph in (report.Content ?? string.Empty).Split(new[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p>@paragraph</p>
+                    }
+                </div>
+            </section>
+
+            <section class="report-card">
+                <h2 class="report-section-title">Attachments</h2>
+
+                @if (!string.IsNullOrWhiteSpace(fileUrl))
+                {
+                    <div class="report-attachment-list">
+                        <div class="report-attachment-item">
+                            <div class="report-attachment-copy">
+                                <span class="material-symbols-outlined text-primary">attachment</span>
+                                <div>
+                                    <p class="mb-1 fw-semibold">Supporting Attachment</p>
+                                    <p class="mb-0 text-muted small">@extension.TrimStart('.').ToUpperInvariant() file</p>
+                                </div>
+                            </div>
+                            <div class="report-attachment-actions">
+                                <a href="@fileUrl" target="_blank" class="report-icon-button" title="View attachment">
+                                    <span class="material-symbols-outlined">visibility</span>
+                                </a>
+                                <a asp-action="DownloadPdf" asp-route-id="@report.Id" class="report-icon-button" title="Download report PDF">
+                                    <span class="material-symbols-outlined">download</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (isImage)
+                    {
+                        <div class="report-image-preview">
+                            <img src="@fileUrl" alt="Report attachment preview" />
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No supporting attachment was uploaded for this report.</p>
+                }
+            </section>
+        </div>
+
+        <div class="report-details-side">
+            <section class="report-card report-sticky-card">
+                <h2 class="report-section-title">Review Action</h2>
+
+                @if (isSuperAdmin)
+                {
+                    <div class="report-action-stack">
+                        <a asp-action="@backAction" class="report-secondary-button">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                            <span>Back to Reports</span>
+                        </a>
+
+                        <a asp-action="DownloadPdf" asp-route-id="@report.Id" class="report-secondary-button">
+                            <span class="material-symbols-outlined">download</span>
+                            <span>Download PDF</span>
+                        </a>
+
+                        @if (report.Status == ReportStatus.Pending)
+                        {
+                            <form asp-action="ApproveReport" asp-route-id="@report.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="report-primary-button report-approve-button">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    <span>Approve Report</span>
+                                </button>
+                            </form>
+
+                            <form asp-action="CancelReport" asp-route-id="@report.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="report-primary-button report-reject-button">
+                                    <span class="material-symbols-outlined">cancel</span>
+                                    <span>Reject Report</span>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="report-note-box">
+                                This report has already been reviewed. No further approval action is available.
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="report-action-stack">
+                        <a asp-action="@backAction" class="report-secondary-button">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                            <span>Back to Reports</span>
+                        </a>
+
+                        <a asp-action="DownloadPdf" asp-route-id="@report.Id" class="report-secondary-button">
+                            <span class="material-symbols-outlined">download</span>
+                            <span>Download PDF</span>
+                        </a>
+
+                        <div class="report-note-box">
+                            Your report is currently <strong>@report.Status</strong>. Review actions are handled by the super admin panel.
+                        </div>
+                    </div>
+                }
+            </section>
+
+            <section class="report-card">
+                <h2 class="report-section-title">Activity History</h2>
+                <div class="report-timeline">
+                    <div class="report-timeline-item">
+                        <div class="report-timeline-icon">
+                            <span class="material-symbols-outlined">send</span>
+                        </div>
+                        <div>
+                            <p class="mb-1 fw-semibold">Report Submitted</p>
+                            <p class="text-muted small mb-1">@report.DateCreated.ToString("dd MMM yyyy • hh:mm tt")</p>
+                            <p class="mb-0 text-muted">Initial submission by @submittedBy.</p>
+                        </div>
+                    </div>
+
+                    <div class="report-timeline-item">
+                        <div class="report-timeline-icon report-timeline-icon-muted">
+                            <span class="material-symbols-outlined">visibility</span>
+                        </div>
+                        <div>
+                            <p class="mb-1 fw-semibold">Review Status</p>
+                            <p class="text-muted small mb-1">@report.Status</p>
+                            <p class="mb-0 text-muted">The report is currently in the @report.Status.ToString().ToLowerInvariant() stage.</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(fileUrl))
+                    {
+                        <div class="report-timeline-item">
+                            <div class="report-timeline-icon report-timeline-icon-muted">
+                                <span class="material-symbols-outlined">attachment</span>
+                            </div>
+                            <div>
+                                <p class="mb-1 fw-semibold">Attachment Included</p>
+                                <p class="text-muted small mb-1">Supporting file uploaded</p>
+                                <p class="mb-0 text-muted">This report includes an attachment for supporting evidence or reference.</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
     </div>
+</section>
 
-    <a href="@Model.Data.FileUrl"
-       download
-       class="btn btn-success">
-        Download Attachment
-    </a>
-}
-
-<p><b>Created:</b> @Model.Data.DateCreated.ToString("g")</p>
-
-<form asp-action="Details" method="post">
-    <input type="hidden" asp-for="Data.Id" />
-    @if (isSuperAdmin)
-    {
-        <a asp-action="GetAllReports" class="btn btn-secondary">Cancel</a>
+<style>
+    .report-details-page {
+        color: #1a1b22;
     }
-    else
-    {
-        <a asp-action="GetMyReports" class="btn btn-secondary">Cancel</a>
+
+    .report-details-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        gap: 24px;
     }
-</form>
+
+    .report-details-main,
+    .report-details-side {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .report-card {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(196, 197, 212, 0.8);
+        border-radius: 22px;
+        box-shadow: 0 18px 34px rgba(24, 33, 74, 0.08);
+        padding: 24px;
+    }
+
+    .report-sticky-card {
+        position: sticky;
+        top: 100px;
+    }
+
+    .report-head-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+
+    .report-id {
+        display: block;
+        margin-bottom: 8px;
+        color: #747683;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .report-title {
+        margin: 0;
+        color: #204098;
+        font-size: clamp(1.8rem, 2.5vw, 2.4rem);
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .report-status-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .report-status-pending {
+        background: #dbe1ff;
+        color: #204098;
+    }
+
+    .report-status-approved {
+        background: #e7f7ee;
+        color: #0d6b39;
+    }
+
+    .report-status-rejected {
+        background: #ffded7;
+        color: #a32d1a;
+    }
+
+    .report-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(196, 197, 212, 0.7);
+    }
+
+    .report-meta-grid-staff {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .report-meta-label {
+        margin: 0 0 6px;
+        color: #747683;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .report-meta-value {
+        margin: 0;
+        color: #1a1b22;
+        font-weight: 700;
+    }
+
+    .report-priority {
+        color: #204098;
+    }
+
+    .report-section-title {
+        margin: 0 0 18px;
+        color: #204098;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .report-content p {
+        color: #334155;
+        line-height: 1.8;
+        margin-bottom: 16px;
+    }
+
+    .report-attachment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .report-attachment-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(196, 197, 212, 0.75);
+        background: rgba(244, 242, 252, 0.6);
+    }
+
+    .report-attachment-copy {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .report-attachment-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .report-icon-button {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #204098;
+        background: transparent;
+        transition: background-color 0.18s ease;
+    }
+
+    .report-icon-button:hover {
+        background: #dce1ff;
+    }
+
+    .report-image-preview {
+        margin-top: 16px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(196, 197, 212, 0.72);
+    }
+
+    .report-image-preview img {
+        width: 100%;
+        display: block;
+        max-height: 420px;
+        object-fit: cover;
+    }
+
+    .report-action-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .report-primary-button,
+    .report-secondary-button {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+
+    .report-secondary-button {
+        background: rgba(244, 242, 252, 0.72);
+        color: #204098;
+        border-color: rgba(196, 197, 212, 0.7);
+    }
+
+    .report-primary-button {
+        color: #ffffff;
+    }
+
+    .report-approve-button {
+        background: #10b981;
+    }
+
+    .report-reject-button {
+        background: #ffffff;
+        color: #ba1a1a;
+        border-color: rgba(186, 26, 26, 0.32);
+    }
+
+    .report-note-box {
+        padding: 16px;
+        border-radius: 16px;
+        background: rgba(244, 242, 252, 0.65);
+        color: #556070;
+        line-height: 1.6;
+    }
+
+    .report-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .report-timeline-item {
+        display: flex;
+        gap: 14px;
+    }
+
+    .report-timeline-icon {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #204098;
+        color: #ffffff;
+    }
+
+    .report-timeline-icon-muted {
+        background: #dbe1ff;
+        color: #204098;
+    }
+
+    @@media (max-width: 1199.98px) {
+        .report-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-sticky-card {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .report-head-top,
+        .report-meta-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-head-top {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .report-attachment-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>

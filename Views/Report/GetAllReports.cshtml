@@ -1,202 +1,506 @@
-﻿@using MITCRMS.Models.DTOs;
+@using MITCRMS.Models.DTOs
+@using MITCRMS.Models.Enum
 @model List<MITCRMS.Models.DTOs.Report.ReportDto>
 
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewBag.Title = "Report Management";
-    ViewData["Title"] = "All Staff Reports";
+    ViewData["Title"] = "All Reports Archive";
+
+    var reports = Model ?? new List<MITCRMS.Models.DTOs.Report.ReportDto>();
+    var currentStatus = ViewBag.StatusFilter as string ?? string.Empty;
+    var currentSearch = ViewBag.SearchTerm as string ?? string.Empty;
+    var approvedCount = reports.Count(r => r.Status == ReportStatus.Approved);
+    var pendingCount = reports.Count(r => r.Status == ReportStatus.Pending);
+    var rejectedCount = reports.Count(r => r.Status == ReportStatus.Rejected);
 }
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-                    <h4 class="mb-0">
-                        <i class="fas fa-tasks me-2"></i>Report Management Portal
-                    </h4>
-                    <div class="btn-group">
-                        <button class="btn btn-outline-light btn-sm dropdown-toggle"
-                                type="button"
-                                data-bs-toggle="dropdown">
-                            <i class="fas fa-filter me-1"></i> Filter Status
-                        </button>
-
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item"
-                                   asp-action="GetAllReports"
-                                   asp-route-status="">
-                                    All Reports
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item"
-                                   asp-action="GetAllReports"
-                                   asp-route-status="Pending">
-                                    Pending Only
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item"
-                                   asp-action="GetAllReports"
-                                   asp-route-status="Approved">
-                                    Approved
-                                </a>
-                            </li>
-
-                            <li>
-                                <a class="dropdown-item"
-                                   asp-action="GetAllReports"
-                                   asp-route-status="Rejected">
-                                    Cancelled
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                </div>
-
-                <div class="card-body">
-                    @* Notification Alerts *@
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-
-                    @if (Model != null && Model.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle border">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 5%">S/N</th>
-                                        <th style="width: 20%">Report Tittle</th>
-                                        <th style="width: 15%">Full Name</th>
-                                        <th style="width: 15%">Department</th>
-                                        <th style="width: 15%">Submitted On</th>
-                                        <th style="width: 10%" class="text-center">Status</th>
-                                        <th style="width: 20%" class="text-center">Admin Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{
-                                        int count = 1;
-                                    }
-                                    @foreach (var report in Model)
-                                    {
-                                        <tr>
-                                            <td class="fw-bold text-muted">@count</td>
-                                            <td>
-                                                <div class="d-flex flex-column">
-                                                    <span class="fw-bold text-dark">@report.Tittle</span>
-                                                    @if (!string.IsNullOrEmpty(report.FileUrl))
-                                                    {
-                                                        <a href="@report.FileUrl" target="_blank" class="small text-decoration-none">
-                                                            <i class="fas fa-paperclip me-1"></i>View Attachment
-                                                        </a>
-                                                    }
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <p class="text-truncate mb-0 small text-muted" style="max-width: 350px;" title="@report.FullName">
-                                                    @report.FullName
-                                                </p>
-                                            </td>
-                                            <td>
-                                                <p class="text-truncate mb-0 small text-muted" style="max-width: 350px;" title="@report">
-                                                    @report.DepartmentName
-                                                </p>
-                                            </td>
-                                            <td>
-                                                <div class="small">
-                                                    <i class="far fa-calendar-alt me-1"></i>@report.DateCreated.ToString("dd MMM yyyy")<br />
-                                                    <i class="far fa-clock me-1 text-muted"></i>@report.DateCreated.ToString("hh:mm tt")
-                                                </div>
-                                            </td>
-                                            <td class="text-center">
-                                                @switch (report.Status)
-                                                {
-                                                    case MITCRMS.Models.Enum.ReportStatus.Pending:
-                                                        <span class="badge rounded-pill bg-warning text-dark px-3">Pending</span>
-                                                        break;
-                                                    case MITCRMS.Models.Enum.ReportStatus.Approved:
-                                                        <span class="badge rounded-pill bg-success px-3">Approved</span>
-                                                        break;
-                                                    case MITCRMS.Models.Enum.ReportStatus.Rejected:
-                                                        <span class="badge rounded-pill bg-danger px-3">Rejected</span>
-                                                        break;
-                                                }
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group shadow-sm">
-                                                    <a asp-action="Details" asp-route-id="@report.Id" class="btn btn-sm btn-outline-secondary" title="Full View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a asp-action="DownloadPdf" asp-route-id="@report.Id"
-                                                       class="btn btn-outline-warning" title="Download Report">
-                                                        <i class="fas fa-download"></i>
-                                                    </a>
-
-                                                    @if (report.Status == MITCRMS.Models.Enum.ReportStatus.Pending)
-                                                    {
-                                                        <form asp-action="ApproveReport" asp-route-id="@report.Id" method="post" class="d-inline">
-                                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Approve Report">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
-                                                        <form asp-action="CancelReport" asp-route-id="@report.Id" method="post" class="d-inline">
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Reject Report">
-                                                                <i class="fas fa-times"></i>
-                                                            </button>
-                                                        </form>
-                                                    }
-                                                    else
-                                                    {
-                                                        <button class="btn btn-sm btn-light disabled" title="Action Completed">
-                                                            <i class="fas fa-lock"></i>
-                                                        </button>
-                                                    }
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        count++;
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5">
-                            <div class="mb-3">
-                                <i class="fas fa-clipboard-check fa-4x text-light"></i>
-                            </div>
-                            <h4 class="text-muted">Queue is Clear</h4>
-                            <p class="text-muted">There are no reports awaiting review at this time.</p>
-                        </div>
-                    }
-                </div>
-                <div class="card-footer bg-white text-muted small">
-                    <i class="fas fa-info-circle me-1"></i> Admins can only Approve or Reject reports currently in <strong>Pending</strong> status.
-                </div>
-            </div>
+<section class="reports-archive-page">
+    <div class="reports-archive-header">
+        <div>
+            <div class="reports-archive-breadcrumb">Reports / Archive</div>
+            <h1 class="reports-archive-title">System Reports</h1>
         </div>
     </div>
-</div>
 
-@section Scripts {
-    <script>
-        // Auto-hide alerts
-        setTimeout(function() {
-            var alert = document.querySelector('.alert');
-            if (alert) {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }
-        }, 4000);
-    </script>
-}
+    <section class="reports-filter-card">
+        <form method="get" asp-action="GetAllReports" class="reports-filter-grid">
+            <div class="reports-filter-group reports-filter-search">
+                <label for="search">Search</label>
+                <input id="search" name="search" value="@currentSearch" type="text" placeholder="Search report titles, staff, departments..." />
+            </div>
+
+            <div class="reports-filter-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(currentStatus))">All Statuses</option>
+                    <option value="Pending" selected="@(currentStatus == "Pending")">Pending Review</option>
+                    <option value="Approved" selected="@(currentStatus == "Approved")">Approved</option>
+                    <option value="Rejected" selected="@(currentStatus == "Rejected")">Requires Revision</option>
+                </select>
+            </div>
+
+            <div class="reports-filter-actions">
+                <a asp-action="GetAllReports" class="reports-clear-button">Clear Filters</a>
+                <button type="submit" class="reports-apply-button">Apply Filters</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="reports-table-card">
+        <div class="reports-table-head">
+            <div>
+                <h2>Report Archive</h2>
+                <p>Showing <strong>@reports.Count</strong> report(s) in the current result set.</p>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success m-4 mb-0">@TempData["SuccessMessage"]</div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger m-4 mb-0">@TempData["ErrorMessage"]</div>
+        }
+
+        @if (reports.Any())
+        {
+            <div class="table-responsive">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>Report ID</th>
+                            <th>Title</th>
+                            <th>Submitter</th>
+                            <th>Department</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in reports)
+                        {
+                            var statusClass = report.Status switch
+                            {
+                                ReportStatus.Approved => "reports-badge-approved",
+                                ReportStatus.Rejected => "reports-badge-rejected",
+                                _ => "reports-badge-pending"
+                            };
+
+                            <tr>
+                                <td class="reports-id">#REP-@report.Id.ToString().Substring(0, 6).ToUpperInvariant()</td>
+                                <td>
+                                    <div class="reports-title-cell">
+                                        <span class="reports-title-text">@report.Tittle</span>
+                                        @if (!string.IsNullOrWhiteSpace(report.FileUrl))
+                                        {
+                                            <span class="reports-attachment-note">Attachment included</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>@report.FullName</td>
+                                <td class="text-muted">@report.DepartmentName</td>
+                                <td class="reports-date">@report.DateCreated.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <span class="reports-badge @statusClass">@report.Status</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="reports-actions">
+                                        <a asp-action="Details" asp-route-id="@report.Id" class="reports-link-button">View Details</a>
+                                        <a asp-action="DownloadPdf" asp-route-id="@report.Id" class="reports-icon-button" title="Download PDF">
+                                            <span class="material-symbols-outlined">download</span>
+                                        </a>
+
+                                        @if (report.Status == ReportStatus.Pending)
+                                        {
+                                            <form asp-action="ApproveReport" asp-route-id="@report.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="reports-icon-button reports-icon-approve" title="Approve report">
+                                                    <span class="material-symbols-outlined">check</span>
+                                                </button>
+                                            </form>
+                                            <form asp-action="CancelReport" asp-route-id="@report.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="reports-icon-button reports-icon-reject" title="Reject report">
+                                                    <span class="material-symbols-outlined">close</span>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="reports-empty-state">
+                <span class="material-symbols-outlined">folder_open</span>
+                <h3>No reports found</h3>
+                <p>Try adjusting the current filters or search term to broaden the archive results.</p>
+            </div>
+        }
+    </section>
+
+    <section class="reports-summary-grid">
+        <div class="reports-summary-card">
+            <div class="reports-summary-head">
+                <span>Compliance Rate</span>
+                <span class="material-symbols-outlined text-success">verified</span>
+            </div>
+            <div class="reports-summary-metric">@((reports.Count == 0 ? 0 : Math.Round((double)approvedCount / reports.Count * 100, 1)))%</div>
+            <p>Approved reports across the current archive set.</p>
+        </div>
+
+        <div class="reports-summary-card">
+            <div class="reports-summary-head">
+                <span>Review Queue</span>
+                <span class="material-symbols-outlined text-primary">speed</span>
+            </div>
+            <div class="reports-summary-metric">@pendingCount</div>
+            <p>Reports currently waiting for admin review.</p>
+        </div>
+
+        <div class="reports-summary-card">
+            <div class="reports-summary-head">
+                <span>Requires Revision</span>
+                <span class="material-symbols-outlined text-danger">notification_important</span>
+            </div>
+            <div class="reports-summary-metric">@rejectedCount</div>
+            <p>Reports returned or rejected in the current archive set.</p>
+        </div>
+    </section>
+</section>
+
+<style>
+    .reports-archive-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .reports-archive-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+    }
+
+    .reports-archive-breadcrumb {
+        color: #747683;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+
+    .reports-archive-title {
+        margin: 0;
+        color: #204098;
+        font-size: clamp(2rem, 2.4vw, 2.5rem);
+        font-weight: 800;
+    }
+
+    .reports-filter-card,
+    .reports-table-card,
+    .reports-summary-card {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(207, 214, 226, 0.82);
+        border-radius: 22px;
+        box-shadow: 0 18px 34px rgba(24, 33, 74, 0.08);
+    }
+
+    .reports-filter-card {
+        padding: 24px;
+    }
+
+    .reports-filter-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr) auto;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .reports-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .reports-filter-group label {
+        color: #556070;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .reports-filter-group input,
+    .reports-filter-group select {
+        width: 100%;
+        border: 1px solid rgba(196, 197, 212, 0.88);
+        border-radius: 14px;
+        background: #ffffff;
+        padding: 12px 14px;
+        outline: none;
+    }
+
+    .reports-filter-group input:focus,
+    .reports-filter-group select:focus {
+        border-color: rgba(60, 89, 177, 0.45);
+        box-shadow: 0 0 0 4px rgba(60, 89, 177, 0.08);
+    }
+
+    .reports-filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .reports-clear-button,
+    .reports-apply-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        border: 1px solid transparent;
+    }
+
+    .reports-clear-button {
+        color: #556070;
+        background: transparent;
+        border-color: rgba(196, 197, 212, 0.8);
+    }
+
+    .reports-apply-button {
+        background: linear-gradient(135deg, #204098 0%, #3c59b1 100%);
+        color: #ffffff;
+    }
+
+    .reports-table-head {
+        padding: 24px;
+        border-bottom: 1px solid rgba(207, 214, 226, 0.68);
+    }
+
+    .reports-table-head h2 {
+        margin: 0 0 6px;
+        color: #204098;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .reports-table-head p {
+        margin: 0;
+        color: #556070;
+    }
+
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .reports-table thead {
+        background: rgba(244, 242, 252, 0.72);
+    }
+
+    .reports-table th,
+    .reports-table td {
+        padding: 16px 24px;
+        vertical-align: middle;
+    }
+
+    .reports-table th {
+        color: #747683;
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+    }
+
+    .reports-table tbody tr {
+        border-top: 1px solid rgba(207, 214, 226, 0.64);
+    }
+
+    .reports-table tbody tr:nth-child(even) {
+        background: rgba(248, 250, 255, 0.72);
+    }
+
+    .reports-table tbody tr:hover {
+        background: rgba(244, 242, 252, 0.58);
+    }
+
+    .reports-id,
+    .reports-date {
+        font-weight: 700;
+        color: #334155;
+        white-space: nowrap;
+    }
+
+    .reports-title-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .reports-title-text {
+        font-weight: 700;
+        color: #1a1b22;
+    }
+
+    .reports-attachment-note {
+        color: #747683;
+        font-size: 0.76rem;
+    }
+
+    .reports-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .reports-badge-approved {
+        background: #e7f7ee;
+        color: #0d6b39;
+    }
+
+    .reports-badge-pending {
+        background: #fff2c8;
+        color: #8a6300;
+    }
+
+    .reports-badge-rejected {
+        background: #ffded7;
+        color: #a32d1a;
+    }
+
+    .reports-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .reports-link-button {
+        color: #204098;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .reports-link-button:hover {
+        text-decoration: underline;
+    }
+
+    .reports-icon-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        color: #204098;
+    }
+
+    .reports-icon-button:hover {
+        background: #dce1ff;
+    }
+
+    .reports-icon-approve {
+        color: #0d6b39;
+    }
+
+    .reports-icon-approve:hover {
+        background: #e7f7ee;
+    }
+
+    .reports-icon-reject {
+        color: #a32d1a;
+    }
+
+    .reports-icon-reject:hover {
+        background: #ffded7;
+    }
+
+    .reports-empty-state {
+        padding: 56px 24px;
+        text-align: center;
+    }
+
+    .reports-empty-state .material-symbols-outlined {
+        font-size: 52px;
+        color: #899ad7;
+    }
+
+    .reports-empty-state h3 {
+        margin: 14px 0 8px;
+        color: #204098;
+        font-weight: 800;
+    }
+
+    .reports-empty-state p {
+        margin: 0;
+        color: #556070;
+    }
+
+    .reports-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .reports-summary-card {
+        padding: 24px;
+    }
+
+    .reports-summary-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        color: #556070;
+        font-weight: 700;
+    }
+
+    .reports-summary-metric {
+        color: #204098;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    .reports-summary-card p {
+        margin: 0;
+        color: #556070;
+    }
+
+    @@media (max-width: 1199.98px) {
+        .reports-summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 991.98px) {
+        .reports-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .reports-filter-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>

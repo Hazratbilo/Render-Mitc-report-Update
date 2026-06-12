@@ -1,4 +1,4 @@
-﻿@using MITCRMS.Models.DTOs.Department
+@using MITCRMS.Models.DTOs.Department
 @model DepartmentDto         
 
 @{
@@ -6,22 +6,77 @@
     ViewData["Title"] = "Delete Department";
 }
 
-<h2>@ViewData["Title"]</h2>
-<h4>Are you sure you want to delete this Department?</h4>
+<section class="dept-create-page">
+    <div class="dept-create-header">
+        <div>
+            <div class="dept-create-breadcrumb">Department Management / Delete</div>
+            <h1 class="dept-create-title">Delete Department</h1>
+            <p class="dept-create-subtitle text-danger fw-semibold">Are you sure you want to permanently delete this Department? This action is irreversible.</p>
+        </div>
+        <a asp-action="GetAllDepartment" class="dept-create-secondary text-decoration-none">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Back to Departments</span>
+        </a>
+    </div>
 
-<div class="p-3">
-    <h2>@Model.DepartmentName</h2>
-</div>
+    <div class="dept-create-grid">
+        <div class="dept-create-card">
+            <div class="p-3 mb-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="material-symbols-outlined text-danger fs-1">warning</span>
+                    <div>
+                        <h4 class="text-danger fw-bold mb-0">Confirm Permanent Deletion</h4>
+                        <p class="text-muted small mb-0">You are about to delete @Model.DepartmentName</p>
+                    </div>
+                </div>
+            </div>
 
-<div class="card p-3">
-    <p><b>Department Code:</b> @Model.DepartmentCode</p>
-</div>
+            <div class="mb-4">
+                <div class="dept-create-group">
+                    <label class="dept-create-label">Department Name</label>
+                    <div class="form-control-plaintext fs-4 fw-bold text-dark">@Model.DepartmentName</div>
+                </div>
 
-<p><b>Created:</b> @Model.DateCreated.ToString("g")</p>
+                <div class="dept-create-group mt-3">
+                    <label class="dept-create-label">Department Code</label>
+                    <div>
+                        <span class="badge bg-light text-dark border fs-6 px-3 py-2">@Model.DepartmentCode</span>
+                    </div>
+                </div>
 
-<form asp-action="DeleteReport" method="post">
-    <input type="hidden" asp-for="@Model.Id" />
-    <button type="submit" class="btn btn-danger">Delete</button>
+                <div class="dept-create-group mt-3">
+                    <label class="dept-create-label">Created On</label>
+                    <div class="text-muted">@Model.DateCreated.ToString("dddd, MMMM dd, yyyy (hh:mm tt)")</div>
+                </div>
+            </div>
 
-    <a asp-action="GetAllDepartment" class="btn btn-secondary ms-2">Cancel</a>
-</form>
+            <form asp-action="DeleteConfirmed" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="@Model.Id" />
+
+                <div class="dept-create-actions mt-4 pt-3 border-top">
+                    <a asp-action="GetAllDepartment" class="dept-create-reset text-decoration-none">
+                        <span class="material-symbols-outlined">cancel</span>
+                        <span>Cancel</span>
+                    </a>
+                    <button type="submit" class="dept-create-submit bg-danger text-white border-0" style="box-shadow: 0 12px 22px rgba(220, 53, 69, 0.25);">
+                        <span class="material-symbols-outlined">delete</span>
+                        <span>Yes, Delete Department</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="dept-create-side">
+            <div class="dept-create-note-card dept-create-note-warning">
+                <h2><span class="material-symbols-outlined align-middle me-1">warning</span>Warning</h2>
+                <p>Deleting a department will clear its reference from any associated staff members and reports. Make sure to reassign affected personnel before proceeding.</p>
+            </div>
+            
+            <div class="dept-create-note-card">
+                <h2>Need Help?</h2>
+                <p>If you made a mistake or want to modify the department code/name instead, you can return to the department directory and edit the record (if available) or contact the system administrator.</p>
+            </div>
+        </div>
+    </div>
+</section>

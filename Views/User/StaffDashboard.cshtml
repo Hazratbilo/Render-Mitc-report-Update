@@ -1,176 +1,181 @@
-﻿@using MITCRMS.Models.DTOs.Report
+@using MITCRMS.Models.DTOs.Report
 @using MITCRMS.Models.Enum
 @model IEnumerable<ReportDto>
 
 @{
     Layout = "_StaffLayout";
+    ViewData["Title"] = "Dashboard";
+
+    var reports = (Model ?? Enumerable.Empty<ReportDto>())
+        .OrderByDescending(r => r.DateCreated)
+        .ToList();
+
+    var totalReports = reports.Count;
+    var pendingReports = reports.Count(r => r.Status == ReportStatus.Pending);
+    var approvedReports = reports.Count(r => r.Status == ReportStatus.Approved);
+    var rejectedReports = reports.Count(r => r.Status == ReportStatus.Rejected);
+    var recentReports = reports.Take(5).ToList();
+    var approvalRate = totalReports > 0 ? Math.Round((double)approvedReports / totalReports * 100) : 0;
+    var monthTrend = totalReports > 0 ? $"+{Math.Min(totalReports, 12)} active submissions" : "Start your first submission";
 }
 
-<style>
-    .dashboard-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-top: 16px;
-    }
+<section class="staff-page-header">
+    <div>
+        <span class="staff-page-eyebrow">
+            <span class="material-symbols-outlined">school</span>
+            Staff Workspace
+        </span>
+        <h1 class="staff-page-title">Welcome back, @User.Identity?.Name</h1>
+        <p class="staff-page-subtitle">
+            Here is a polished overview of your reporting activity, recent submissions, and approval progress for the current session.
+        </p>
+    </div>
+</section>
 
-    .stat-card {
-        border-radius: 14px;
-        padding: 26px 28px;
-        position: relative;
-        overflow: hidden;
-        text-decoration: none !important;
-        display: block;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 1px solid transparent;
-    }
+<section class="staff-dashboard-grid">
+    <a asp-controller="Report" asp-action="GetMyReports" class="staff-stat-card staff-stat-card-total">
+        <div class="staff-stat-card-top">
+            <span class="staff-stat-icon">
+                <span class="material-symbols-outlined">assignment</span>
+            </span>
+            <span class="staff-stat-trend">@monthTrend</span>
+        </div>
+        <p class="staff-stat-label">Total Reports Submitted</p>
+        <h2 class="staff-stat-value">@totalReports</h2>
+    </a>
 
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10) !important;
-    }
+    <a asp-controller="Report" asp-action="GetMyReports" asp-route-status="@ReportStatus.Pending" class="staff-stat-card staff-stat-card-pending">
+        <div class="staff-stat-card-top">
+            <span class="staff-stat-icon">
+                <span class="material-symbols-outlined">pending_actions</span>
+            </span>
+        </div>
+        <p class="staff-stat-label">Pending Approval</p>
+        <h2 class="staff-stat-value">@pendingReports</h2>
+    </a>
 
-    .stat-card::after {
-        content: '';
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        height: 3px;
-    }
+    <a asp-controller="Report" asp-action="GetMyReports" asp-route-status="@ReportStatus.Approved" class="staff-stat-card staff-stat-card-approved">
+        <div class="staff-stat-card-top">
+            <span class="staff-stat-icon">
+                <span class="material-symbols-outlined">verified</span>
+            </span>
+            <span class="staff-stat-trend">@approvalRate% approval rate</span>
+        </div>
+        <p class="staff-stat-label">Approved Reports</p>
+        <h2 class="staff-stat-value">@approvedReports</h2>
+    </a>
+</section>
 
-    .stat-card h6 {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-        margin-bottom: 10px;
-    }
+<section class="staff-dashboard-panels">
+    <div class="staff-panel">
+        <div class="staff-panel-header">
+            <div>
+                <h2 class="staff-panel-title">Recent Reports</h2>
+            </div>
+            <a asp-controller="Report" asp-action="GetMyReports" class="staff-panel-link">View All History</a>
+        </div>
 
-    .stat-card h3 {
-        font-size: 40px;
-        font-weight: 800;
-        line-height: 1;
-        margin: 0;
-    }
-
-    /* Total — dark */
-    .card-total {
-        background: #0f1623;
-        border-color: rgba(255,255,255,0.06);
-    }
-    .card-total h6 { color: rgba(255,255,255,0.45); }
-    .card-total h3 { color: #ffffff; }
-    .card-total::after { background: #4f7cff; }
-
-    /* Pending — amber tint */
-    .card-pending {
-        background: #fffbf0;
-        border-color: #fde68a;
-    }
-    .card-pending h6 { color: #92650a; }
-    .card-pending h3 { color: #f0a500; }
-    .card-pending::after { background: #f0a500; opacity: 0.6; }
-
-    /* Approved — green tint */
-    .card-approved {
-        background: #f0fdf7;
-        border-color: #a7f3d0;
-    }
-    .card-approved h6 { color: #065f46; }
-    .card-approved h3 { color: #0d9a6a; }
-    .card-approved::after { background: #0d9a6a; opacity: 0.6; }
-
-    /* Cancelled — red tint */
-    .card-cancelled {
-        background: #fff5f5;
-        border-color: #fed7d7;
-    }
-    .card-cancelled h6 { color: #9b1c1c; }
-    .card-cancelled h3 { color: #e53e3e; }
-    .card-cancelled::after { background: #e53e3e; opacity: 0.6; }
-</style>
-
-<main id="main" class="main">
-    <h1><i class="bi bi-person-check-fill"></i> Welcome @User.Identity.Name</h1>
-
-    <div class="pagetitle">
-        <br />
-
-        @if (Model != null && Model.Any())
+        @if (recentReports.Any())
         {
-            <div class="dashboard-cards">
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status=""
-                   class="stat-card card-total shadow-sm">
-                    <h6>Total Reports</h6>
-                    <h3>@ViewBag.ReportsCount</h3>
-                </a>
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status="@ReportStatus.Pending"
-                   class="stat-card card-pending shadow-sm">
-                    <h6>Pending</h6>
-                    <h3>@Model.Count(r => r.Status == ReportStatus.Pending)</h3>
-                </a>
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status="@ReportStatus.Approved"
-                   class="stat-card card-approved shadow-sm">
-                    <h6>Approved</h6>
-                    <h3>@Model.Count(r => r.Status == ReportStatus.Approved)</h3>
-                </a>
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status="@ReportStatus.Rejected"
-                   class="stat-card card-cancelled shadow-sm">
-                    <h6>Cancelled</h6>
-                    <h3>@Model.Count(r => r.Status == ReportStatus.Rejected)</h3>
-                </a>
-
+            <div class="staff-table-wrap">
+                <table class="staff-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in recentReports)
+                        {
+                            var statusClass = report.Status switch
+                            {
+                                ReportStatus.Approved => "staff-status-approved",
+                                ReportStatus.Rejected => "staff-status-rejected",
+                                _ => "staff-status-pending"
+                            };
+                            <tr>
+                                <td>@report.DateCreated.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <span class="staff-table-title">@report.Tittle</span>
+                                    <span class="staff-table-subtext">Submitted @report.DateCreated.ToString("hh:mm tt")</span>
+                                </td>
+                                <td>
+                                    <span class="staff-status-badge @statusClass">@report.Status</span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="Report" asp-action="Details" asp-route-id="@report.Id" class="staff-table-action" title="View report">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         }
         else
         {
-            <div class="dashboard-cards">
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status=""
-                   class="stat-card card-total shadow-sm">
-                    <h6>Total Reports</h6>
-                    <h3>@ViewBag.ReportsCount</h3>
-                </a>
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status="@ReportStatus.Pending"
-                   class="stat-card card-pending shadow-sm">
-                    <h6>Pending</h6>
-                    <h3>@Model?.Count(r => r.Status == ReportStatus.Pending)</h3>
-                </a>
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status="@ReportStatus.Approved"
-                   class="stat-card card-approved shadow-sm">
-                    <h6>Approved</h6>
-                    <h3>@Model?.Count(r => r.Status == ReportStatus.Approved)</h3>
-                </a>
-
-                <a asp-controller="Report"
-                   asp-action="GetMyReports"
-                   asp-route-status="@ReportStatus.Rejected"
-                   class="stat-card card-cancelled shadow-sm">
-                    <h6>Cancelled</h6>
-                    <h3>@Model?.Count(r => r.Status == ReportStatus.Rejected)</h3>
-                </a>
-
+            <div class="staff-empty-state">
+                <span class="material-symbols-outlined">inbox</span>
+                <h3>No reports yet</h3>
+                <p>Your recent reporting activity will appear here once you submit your first report.</p>
             </div>
         }
-
     </div>
-</main>
+
+    <div class="staff-side-stack">
+        <div class="staff-highlight-panel staff-cta-panel">
+            <h2 class="staff-panel-title">Quick Actions</h2>
+            <p class="staff-cta-panel-copy">
+                Ready to document your latest academic activity, session outcome, or departmental update?
+            </p>
+
+            <a asp-controller="Report" asp-action="CreateReport" class="staff-cta-button">
+                <span class="material-symbols-outlined">post_add</span>
+                <span>Submit New Report</span>
+            </a>
+
+            <div class="staff-mini-actions">
+                <a asp-controller="Report" asp-action="GetMyReports" class="staff-mini-action">
+                    <span class="material-symbols-outlined">draft</span>
+                    <span>View Reports</span>
+                </a>
+                <a asp-controller="Report" asp-action="GetMyReports" asp-route-status="@ReportStatus.Pending" class="staff-mini-action">
+                    <span class="material-symbols-outlined">help_center</span>
+                    <span>Pending Queue</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="staff-highlight-panel">
+            <span class="staff-announcement-tag">Announcement</span>
+            <h2 class="staff-panel-title mt-3">Reporting quality matters</h2>
+            <p class="staff-announcement-copy">
+                Clear titles, structured summaries, and complete attachments help reviewers process submissions faster and improve approval turnaround.
+            </p>
+            <a asp-controller="Report" asp-action="CreateReport" class="staff-panel-link">Open report form</a>
+        </div>
+
+        <div class="staff-highlight-panel">
+            <h2 class="staff-panel-title">Submission Snapshot</h2>
+            <p class="staff-announcement-copy mb-3">
+                Keep an eye on your current report pipeline.
+            </p>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <span class="text-muted">Approved</span>
+                <strong class="text-success">@approvedReports</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <span class="text-muted">Pending</span>
+                <strong style="color:#8a6300;">@pendingReports</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2">
+                <span class="text-muted">Rejected</span>
+                <strong class="text-danger">@rejectedReports</strong>
+            </div>
+        </div>
+    </div>
+</section>

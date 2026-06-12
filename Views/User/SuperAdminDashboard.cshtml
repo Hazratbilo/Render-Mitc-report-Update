@@ -1,136 +1,185 @@
-﻿@using MITCRMS.Models.DTOs.Report
+@using MITCRMS.Models.DTOs.Report
 @using MITCRMS.Models.Enum
 @model IEnumerable<ReportDto>
 
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Super Admin Dashboard";
+
+    var reports = (Model ?? Enumerable.Empty<ReportDto>())
+        .OrderByDescending(r => r.DateCreated)
+        .ToList();
+
+    var totalReports = reports.Count;
+    var pendingReports = reports.Count(r => r.Status == ReportStatus.Pending);
+    var approvedReports = reports.Count(r => r.Status == ReportStatus.Approved);
+    var rejectedReports = reports.Count(r => r.Status == ReportStatus.Rejected);
+    var activeStaff = reports.Select(r => r.FullName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    var activeDepartments = reports.Select(r => r.DepartmentName).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    var pendingApprovalRows = reports.Where(r => r.Status == ReportStatus.Pending).Take(4).ToList();
+    var groupedDepartments = reports
+        .Where(r => !string.IsNullOrWhiteSpace(r.DepartmentName))
+        .GroupBy(r => r.DepartmentName)
+        .Select(g => new { Department = g.Key, Count = g.Count(), Approved = g.Count(x => x.Status == ReportStatus.Approved) })
+        .OrderByDescending(x => x.Count)
+        .Take(4)
+        .ToList();
+    var highestDepartmentCount = groupedDepartments.Any() ? groupedDepartments.Max(x => x.Count) : 1;
 }
 
-<style>
-    .dashboard-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
-        margin-top: 16px;
-    }
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Super Admin Dashboard</h1>
+        <p class="admin-page-subtitle">
+            Monitor approvals, staff activity, departmental reporting volume, and the overall health of the reporting workflow from one control center.
+        </p>
+    </div>
+</section>
 
-    .stat-card {
-        border-radius: 14px;
-        padding: 26px 28px;
-        position: relative;
-        overflow: hidden;
-        text-decoration: none !important;
-        display: block;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 1px solid transparent;
-    }
+<section class="admin-metrics-grid">
+    <a asp-controller="Report" asp-action="GetAllReports" class="admin-metric-card text-decoration-none">
+        <span class="admin-metric-label">Total Reports</span>
+        <h2 class="admin-metric-value">@totalReports</h2>
+        <span class="admin-metric-note">Full reporting volume across the portal</span>
+    </a>
 
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10) !important;
-    }
+    <a asp-controller="Report" asp-action="GetAllReports" asp-route-status="Pending" class="admin-metric-card admin-metric-emphasis text-decoration-none">
+        <span class="admin-metric-label">Pending Approval</span>
+        <h2 class="admin-metric-value">@pendingReports</h2>
+        <span class="admin-metric-note">Requires immediate review attention</span>
+    </a>
 
-    .stat-card::after {
-        content: '';
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        height: 3px;
-    }
+    <a asp-controller="User" asp-action="GetAllUsersWithRoles" class="admin-metric-card text-decoration-none">
+        <span class="admin-metric-label">Active Staff</span>
+        <h2 class="admin-metric-value">@activeStaff</h2>
+        <span class="admin-metric-note">Staff represented in recent submissions</span>
+    </a>
 
-    .stat-card h6 {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-        margin-bottom: 10px;
-    }
+    <a asp-controller="Department" asp-action="GetAllDepartment" class="admin-metric-card text-decoration-none">
+        <span class="admin-metric-label">Total Departments</span>
+        <h2 class="admin-metric-value">@activeDepartments</h2>
+        <span class="admin-metric-note">Academic and administrative units</span>
+    </a>
+</section>
 
-    .stat-card h3 {
-        font-size: 40px;
-        font-weight: 800;
-        line-height: 1;
-        margin: 0;
-    }
-
-    /* Total — dark */
-    .card-total {
-        background: #0f1623;
-        border-color: rgba(255,255,255,0.06);
-    }
-    .card-total h6 { color: rgba(255,255,255,0.45); }
-    .card-total h3 { color: #ffffff; }
-    .card-total::after { background: #4f7cff; }
-
-    /* Pending — amber tint */
-    .card-pending {
-        background: #fffbf0;
-        border-color: #fde68a;
-    }
-    .card-pending h6 { color: #92650a; }
-    .card-pending h3 { color: #f0a500; }
-    .card-pending::after { background: #f0a500; opacity: 0.6; }
-
-    /* Approved — green tint */
-    .card-approved {
-        background: #f0fdf7;
-        border-color: #a7f3d0;
-    }
-    .card-approved h6 { color: #065f46; }
-    .card-approved h3 { color: #0d9a6a; }
-    .card-approved::after { background: #0d9a6a; opacity: 0.6; }
-
-    /* Cancelled — red tint */
-    .card-cancelled {
-        background: #fff5f5;
-        border-color: #fed7d7;
-    }
-    .card-cancelled h6 { color: #9b1c1c; }
-    .card-cancelled h3 { color: #e53e3e; }
-    .card-cancelled::after { background: #e53e3e; opacity: 0.6; }
-</style>
-
-<main id="main" class="main">
-    <div class="pagetitle">
-
-        <h1><i class="bi bi-person-check-fill"></i> Welcome @User.Identity.Name</h1>
-
-        <br />
-
-        <div class="dashboard-cards">
-
-            <a asp-controller="Report"
-                   asp-action="GetAllReports"
-                   asp-route-status=""
-                   class="stat-card card-total shadow-sm">
-                <h6>Total Reports</h6>
-                <h3>@Model?.Count()</h3>
-            </a>
-
-            <a asp-controller="Report"
-                   asp-action="GetAllReports"
-                   asp-route-status="@ReportStatus.Pending"
-                   class="stat-card card-pending shadow-sm">
-                <h6>Pending</h6>
-                <h3>@Model.Count(r => r.Status == ReportStatus.Pending)</h3>
-            </a>
-
-            <a asp-controller="Report"
-                   asp-action="GetAllReports"
-                   asp-route-status="@ReportStatus.Approved"
-                   class="stat-card card-approved shadow-sm">
-                <h6>Approved</h6>
-                <h3>@Model.Count(r => r.Status == ReportStatus.Approved)</h3>
-            </a>
-
-            <a asp-controller="Report"
-                   asp-action="GetAllReports"
-                   asp-route-status="@ReportStatus.Rejected"
-                   class="stat-card card-cancelled shadow-sm">
-                <h6>Cancelled</h6>
-                <h3>@Model.Count(r => r.Status == ReportStatus.Rejected)</h3>
-            </a>
-
+<section class="admin-dashboard-grid">
+    <div class="admin-panel">
+        <div class="admin-panel-header">
+            <h2 class="admin-panel-title">Priority Pending Approvals</h2>
+            <a asp-controller="Report" asp-action="GetAllReports" asp-route-status="Pending" class="admin-panel-link">View All Reports</a>
         </div>
 
+        @if (pendingApprovalRows.Any())
+        {
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Report ID</th>
+                            <th>Department</th>
+                            <th>Submitted By</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in pendingApprovalRows)
+                        {
+                            var ageInDays = Math.Max((DateTime.UtcNow - report.DateCreated.ToUniversalTime()).Days, 0);
+                            var severityClass = ageInDays >= 3 ? "admin-severity-high" : "admin-severity-medium";
+                            var severityLabel = ageInDays >= 3 ? "Critical" : "Medium";
+                            <tr>
+                                <td>#REP-@report.Id.ToString().Substring(0, 6).ToUpperInvariant()</td>
+                                <td>@report.DepartmentName</td>
+                                <td>@report.FullName</td>
+                                <td>@report.DateCreated.ToString("dd MMM yyyy")</td>
+                                <td><span class="admin-severity @severityClass">@severityLabel</span></td>
+                                <td>
+                                    <a asp-controller="Report" asp-action="Details" asp-route-id="@report.Id" class="admin-action-button" title="View report">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="p-4 text-muted">No pending approvals at the moment.</div>
+        }
     </div>
-</main>
+
+    <div class="admin-panel">
+        <div class="admin-panel-header">
+            <h2 class="admin-panel-title">System Activity</h2>
+            <span class="material-symbols-outlined text-muted">history</span>
+        </div>
+
+        <div class="admin-activity-list">
+            <div class="admin-activity-item">
+                <span class="admin-activity-marker admin-activity-primary">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+                <div class="admin-activity-copy">
+                    <p><strong>Staff activity:</strong> New staff records can be created directly from this dashboard.</p>
+                    <small>Administrative action</small>
+                </div>
+            </div>
+
+            <div class="admin-activity-item">
+                <span class="admin-activity-marker admin-activity-success">
+                    <span class="material-symbols-outlined">check_circle</span>
+                </span>
+                <div class="admin-activity-copy">
+                    <p><strong>Approved reports:</strong> @approvedReports report(s) have already cleared review.</p>
+                    <small>Workflow health snapshot</small>
+                </div>
+            </div>
+
+            <div class="admin-activity-item">
+                <span class="admin-activity-marker admin-activity-danger">
+                    <span class="material-symbols-outlined">warning</span>
+                </span>
+                <div class="admin-activity-copy">
+                    <p><strong>Reports needing attention:</strong> @pendingReports pending and @rejectedReports rejected entries are still in the pipeline.</p>
+                    <small>Review queue summary</small>
+                </div>
+            </div>
+        </div>
+
+        @* <button type="button" class="admin-audit-button">Download Audit Log</button> *@
+    </div>
+</section>
+
+<section class="admin-panel admin-distribution-panel">
+    <div class="admin-distribution-head">
+        <div>
+            <h2 class="admin-panel-title">Reports Distribution</h2>
+            <p class="admin-page-subtitle mb-0">Volume of reports per department based on the current system data.</p>
+        </div>
+    </div>
+
+    @if (groupedDepartments.Any())
+    {
+        @foreach (var item in groupedDepartments)
+        {
+            var width = highestDepartmentCount == 0 ? 0 : (int)Math.Round((double)item.Count / highestDepartmentCount * 100);
+            <div class="admin-distribution-item">
+                <div class="admin-distribution-label">
+                    <span>@item.Department</span>
+                    <span>@item.Count report(s)</span>
+                </div>
+                <div class="admin-distribution-track">
+                    <div class="admin-distribution-fill" style="width:@width%"></div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p class="text-muted mb-0">No departmental report data is available yet.</p>
+    }
+</section>
