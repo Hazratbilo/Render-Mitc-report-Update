@@ -28,18 +28,16 @@ services:
     dockerfilePath: ./Dockerfile
     autoDeploy: true
 
-    # Link environment variable to your Render database
     envVars:
-      - key: ConnectionStrings__MitcrmsConnection
+      - key: ConnectionStrings__MitcrmsContext
         fromDatabase:
-          name: notepad-db 
+          name: MITCRMS-db
           property: connectionString
 
-# Define the PostgreSQL database
 databases:
-  - name: notepad-db
-    databaseName: notepad_axz5
-    user: notepad_axz5_user
+  - name: MITCRMS-db
+    databaseName: mitcrms_db
+    user: mitcrms_db_user
     plan: free
     region: oregon
 

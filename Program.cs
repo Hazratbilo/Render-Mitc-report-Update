@@ -20,17 +20,21 @@ using MITCRMS.Interface.Services;
 using MITCRMS.Models.DTOs.Report.Validation;
 using MITCRMS.Models.Entities;
 using MITCRMS.Persistence.Context;
+using Npgsql;
 using Scrutor;
 using System;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
+var databaseConnectionString = NormalizePostgresConnectionString(
+    builder.Configuration.GetConnectionString("MitcrmsContext")
+    ?? builder.Configuration["DATABASE_URL"]
+    ?? throw new InvalidOperationException("Database connection string 'MitcrmsContext' or 'DATABASE_URL' is not configured."));
+
 // DbContext
 builder.Services.AddDbContext<MitcrmsContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("MitcrmsContext"),
-        new MySqlServerVersion(new Version(9, 0, 0))
-    ));
+    options.UseNpgsql(databaseConnectionString));
 
 // MVC + Razor Pages
 builder.Services.AddControllersWithViews();
@@ -86,6 +90,12 @@ builder.Services.AddAuthorization();
 // Build
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<MitcrmsContext>();
+    dbContext.Database.Migrate();
+}
+
 // Error handling
 if (app.Environment.IsDevelopment())
 {
@@ -123,3 +133,25 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+static string NormalizePostgresConnectionString(string connectionString)
+{
+    if (!Uri.TryCreate(connectionString, UriKind.Absolute, out var uri)
+        || (uri.Scheme != "postgres" && uri.Scheme != "postgresql"))
+    {
+        return connectionString;
+    }
+
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var builder = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        Username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty,
+        Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty,
+        SslMode = SslMode.Require
+    };
+
+    return builder.ConnectionString;
+}
