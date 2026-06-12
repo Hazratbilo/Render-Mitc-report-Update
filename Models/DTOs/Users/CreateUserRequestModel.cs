@@ -24,10 +24,10 @@ namespace MITCRMS.Models.DTOs.Users
         public string PasswordHash { get; set; }
         public string ConfirmPassword { get; set; }
         public string PhoneNumber { get; set; }
-        public ICollection<UserRole> UserRoles { get; set; } = [];
-      
-        public Guid RoleId {  get; set; }
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+        public Guid RoleId { get; set; }
         public Guid DepartmentId { get; set; }
-        public List<Guid> RoleIds { get; set; } = [];
+        public List<Guid> RoleIds { get; set; } = new List<Guid>();
     }
 }
