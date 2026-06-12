@@ -52,6 +52,7 @@
 
             <div class="card-body p-4">
                 <form asp-action="CreateUser" method="post" id="tutorForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <div class="mb-4">
                         <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom">
@@ -126,6 +127,7 @@
                                     <select asp-for="DepartmentId" asp-items="ViewBag.Departments" class="form-control">
                                         <option value="">---Select Department--- </option>
                                     </select>
+                                    <span asp-validation-for="DepartmentId" class="text-danger small"></span>
                                 </div>
                             </div>
 
@@ -134,6 +136,7 @@
                             <label class="fw-bold mb-2">Assign Roles</label>
 
                             <select asp-for="RoleIds" asp-items="ViewBag.Roles" id="role-select" multiple class="d-none"></select>
+                            <span asp-validation-for="RoleIds" class="text-danger small"></span>
 
                             <div class="multiselect-container" id="multiselect-ui">
                                 <button type="button" class="ms-button" id="ms-trigger">
@@ -201,7 +204,7 @@
                                 </div>
                                 <div class="form-text small">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    Password must be at least 6 characters long
+                                    Password must be at least 8 characters long
                                 </div>
                                 <span asp-validation-for="PasswordHash" class="text-danger small"></span>
 

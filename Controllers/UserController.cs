@@ -155,6 +155,7 @@ namespace MITCRMS.Controllers
             {
                 ViewBag.Alert = userStatus.Status;
                 ViewBag.AlertType = "success";
+                ViewBag.Success = userStatus.Message;
 
                 return RedirectToAction("GetAllUsersWithRoles");
             }
@@ -163,6 +164,7 @@ namespace MITCRMS.Controllers
 
                 ViewBag.Alert = userStatus.Status;
                 ViewBag.AlertType = "danger";
+                ViewBag.Failed = userStatus.Message;
                 ModelState.AddModelError("Email", userStatus.Message);
                 
             }

@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using MITCRMS.Contract.Services;
-using MITCRMS.Identity;
-using MITCRMS.Implementation.Repository;
 using MITCRMS.Interface.Repository;
 using MITCRMS.Interface.Services;
 using MITCRMS.Models.DTOs;
-using MITCRMS.Models.DTOs.Report;
 using MITCRMS.Models.DTOs.Role;
 using MITCRMS.Models.DTOs.Users;
 using MITCRMS.Models.Entities;
@@ -18,24 +14,19 @@ namespace MITCRMS.Implementation.Services
         private readonly IUserRepository _userRepository;
         private readonly UserManager<User> _userManager;
         private readonly ILogger<UserService> _logger;
-        private readonly IIdentityService _identityService;
         private readonly IDepartmentRepository _departmentRepository;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IRoleRepository _roleRepository;
 
         public UserService(IUserRepository userRepository,
             UserManager<User> userManager,
-                IIdentityService identityService,
                 IDepartmentRepository departmentRepository,
-                 IUnitOfWork unitOfWork, IRoleRepository roleRepository,
+                 IRoleRepository roleRepository,
             ILogger<UserService> logger)
         {
             _userRepository = userRepository;
             _userManager = userManager;
-            _identityService = identityService;
             _departmentRepository = departmentRepository;
             _roleRepository = roleRepository;
-            _unitOfWork = unitOfWork;
             _logger = logger;
         }
        
@@ -51,7 +42,13 @@ namespace MITCRMS.Implementation.Services
             }
 
 
-            var userExists = await _userRepository.Any(u => u.Email == request.Email);
+            request.Email = request.Email.Trim().ToLowerInvariant();
+            request.FirstName = request.FirstName.Trim();
+            request.LastName = request.LastName.Trim();
+            request.Address = request.Address.Trim();
+            request.PhoneNumber = request.PhoneNumber.Trim();
+
+            var userExists = await _userRepository.Any(u => u.Email.ToLower() == request.Email);
             if (userExists)
             {
                 _logger.LogError("User with email already exist");
@@ -94,8 +91,6 @@ namespace MITCRMS.Implementation.Services
                     };
                 }
 
-                await using var transaction = await _unitOfWork.BeginTransactionAsync();
-
                 var user = new User
                 {
                     Email = request.Email,
@@ -125,6 +120,7 @@ namespace MITCRMS.Implementation.Services
                 {
                     var errors = string.Join(" ", result.Errors.Select(e => e.Description));
                     _logger.LogError("Unable to add user to roles: {Errors}", errors);
+                    await _userManager.DeleteAsync(user);
                     return new BaseResponse<bool>
                     {
                         Message = string.IsNullOrWhiteSpace(errors) ? "Unable to add user to roles" : errors,
@@ -132,7 +128,6 @@ namespace MITCRMS.Implementation.Services
                     };
                 }
 
-                await transaction.CommitAsync();
                 _logger.LogInformation("User added successfully");
                 return new BaseResponse<bool>
                 {
