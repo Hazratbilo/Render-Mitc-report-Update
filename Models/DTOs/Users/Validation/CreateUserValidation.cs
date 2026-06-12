@@ -20,13 +20,14 @@ namespace MITCRMS.Models.DTOs.Users.Validation
                 .Matches(@"^\+?[1-9]\d{1,14}$").WithMessage("Invalid phone number format");
 
             RuleFor(x => x.PasswordHash)
+                 .Cascade(CascadeMode.Stop)
                  .NotEmpty().WithMessage("Password is required.")
                  .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")
                  .MaximumLength(50).WithMessage("Password must not exceed 50 characters.")
                  .Must(p => p.Any(char.IsUpper)).WithMessage("Password must contain at least one uppercase letter.")
                  .Must(p => p.Any(char.IsLower)).WithMessage("Password must contain at least one lowercase letter.")
                  .Must(p => p.Any(char.IsDigit)).WithMessage("Password must contain at least one digit.")
-                 .Must(p => p.Any(char.IsSymbol)).WithMessage("Password must contain at least one special character.");
+                 .Must(p => p.Any(ch => !char.IsLetterOrDigit(ch))).WithMessage("Password must contain at least one special character.");
 
                 RuleFor(x => x.ConfirmPassword)
                     .NotEmpty().WithMessage("Confirm password is required.")

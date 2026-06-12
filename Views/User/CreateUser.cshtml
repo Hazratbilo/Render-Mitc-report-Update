@@ -237,162 +237,6 @@
                         </div>
                     </div>
 
-                    <script>
-                        (function () {
-                          function initCustomMulti(el) {
-                            const targetSelector = el.getAttribute('data-target');
-                            const realSelect = document.querySelector(targetSelector);
-                            if (!realSelect) return;
-
-                            const dropdown = el.querySelector('.cm-dropdown');
-                            const optionsContainer = el.querySelector('.cm-options');
-                            const tagsContainer = el.querySelector('.cm-tags');
-                            const searchInput = el.querySelector('.cm-search');
-                            const selectedBox = el.querySelector('.cm-selected');
-
-                            // build option list from real select
-                            function buildOptions() {
-                              optionsContainer.innerHTML = '';
-                              const opts = Array.from(realSelect.options);
-                              opts.forEach(opt => {
-                                const row = document.createElement('div');
-                                row.className = 'cm-option';
-                                row.setAttribute('data-value', opt.value);
-
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox';
-                                checkbox.checked = opt.selected;
-
-                                const label = document.createElement('span');
-                                label.textContent = opt.text;
-
-                                row.appendChild(checkbox);
-                                row.appendChild(label);
-                                optionsContainer.appendChild(row);
-
-                                row.addEventListener('click', () => {
-                                  opt.selected = !opt.selected;
-                                  checkbox.checked = opt.selected;
-                                  renderTags();
-                                });
-                              });
-
-                              if (opts.length === 0) {
-                                const no = document.createElement('div');
-                                no.className = 'cm-no-results';
-                                no.textContent = 'No options available';
-                                optionsContainer.appendChild(no);
-                              }
-                            }
-
-                            // render tags for selected items
-                            function renderTags() {
-                              tagsContainer.innerHTML = '';
-                              Array.from(realSelect.selectedOptions).forEach(opt => {
-                                const tag = document.createElement('span');
-                                tag.className = 'cm-tag';
-                                tag.textContent = opt.text;
-
-                                const rem = document.createElement('span');
-                                rem.className = 'remove';
-                                rem.innerHTML = '&times;';
-                                rem.addEventListener('click', (e) => {
-                                  e.stopPropagation();
-                                  opt.selected = false;
-                                  // trigger change on underlying select (optional)
-                                  renderTags();
-                                });
-
-                                tag.appendChild(rem);
-                                tagsContainer.appendChild(tag);
-                              });
-
-                              // update checkboxes in dropdown
-                              Array.from(optionsContainer.querySelectorAll('.cm-option')).forEach(row => {
-                                const v = row.getAttribute('data-value');
-                                const checkbox = row.querySelector('input[type="checkbox"]');
-                                const corresponding = realSelect.querySelector('option[value="'+v+'"]');
-                                if (corresponding) checkbox.checked = corresponding.selected;
-                              });
-
-                              // When tags change, also trigger any change handlers bound to realSelect
-                              const event = new Event('change', { bubbles: true });
-                              realSelect.dispatchEvent(event);
-                            }
-
-                            // search filter
-                            function filterOptions() {
-                              const q = searchInput.value.trim().toLowerCase();
-                              const rows = optionsContainer.querySelectorAll('.cm-option');
-                              let visible = 0;
-                              rows.forEach(r => {
-                                const text = r.textContent.toLowerCase();
-                                if (text.indexOf(q) !== -1) {
-                                  r.style.display = 'flex';
-                                  visible++;
-                                } else {
-                                  r.style.display = 'none';
-                                }
-                              });
-                              if (visible === 0) {
-                                if (!optionsContainer.querySelector('.cm-no-results')) {
-                                  const no = document.createElement('div');
-                                  no.className = 'cm-no-results';
-                                  no.textContent = 'No results';
-                                  optionsContainer.appendChild(no);
-                                }
-                              } else {
-                                const no = optionsContainer.querySelector('.cm-no-results');
-                                if (no) no.remove();
-                              }
-                            }
-
-                            // toggle dropdown
-                            function toggleDropdown(show) {
-                              dropdown.style.display = (show ? 'block' : 'none');
-                              if (show) searchInput.focus();
-                            }
-
-                            // close when clicking outside
-                            document.addEventListener('click', (e) => {
-                              if (!el.contains(e.target)) toggleDropdown(false);
-                            });
-
-                            selectedBox.addEventListener('click', (e) => {
-                              toggleDropdown(dropdown.style.display !== 'block');
-                            });
-
-                            // keyboard: focus open
-                            selectedBox.addEventListener('keydown', (e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                toggleDropdown(dropdown.style.display !== 'block');
-                              }
-                              if (e.key === 'Backspace' && searchInput.value === '') {
-                                // remove last selected
-                                const selected = realSelect.selectedOptions;
-                                if (selected.length) {
-                                  selected[selected.length - 1].selected = false;
-                                  renderTags();
-                                }
-                              }
-                            });
-
-                            searchInput.addEventListener('input', filterOptions);
-
-                            // initialize
-                            buildOptions();
-                            renderTags();
-                          }
-
-                          // auto-init for elements with .custom-multiselect
-                          document.addEventListener('DOMContentLoaded', () => {
-                            document.querySelectorAll('.custom-multiselect').forEach(initCustomMulti);
-                          });
-                        })();
-                    </script>
-
-
                     <!-- Form Actions -->
                     <div class="border-top pt-4 mt-4">
                         <div class="d-flex gap-2 justify-content-end">
@@ -421,9 +265,8 @@
                         <ul class="small text-muted mb-0 ps-3">
                             <li>All fields marked with <span class="text-danger">*</span> are required</li>
                             <li>Email address must be valid and unique in the system</li>
-                            <li>Password must be at least 6 characters and match confirmation</li>
-                            <li>Tutor will be automatically assigned the "Staff" role</li>
-                            <li>Date of birth is used to calculate the Staff's age</li>
+                            <li>Password must be at least 8 characters and match confirmation</li>
+                            <li>Select at least one role before creating the staff account</li>
                         </ul>
                     </div>
                 </div>
@@ -451,6 +294,9 @@
             Array.from(realSelect.options).forEach(opt => {
                 const li = document.createElement("li");
                 li.classList.add("ms-option");
+                if (opt.selected) {
+                    li.classList.add("selected");
+                }
                 li.textContent = opt.text;
                 li.dataset.value = opt.value;
                 li.onclick = () => toggleOption(opt.value, li);
@@ -485,6 +331,7 @@
                     tagsContainer.appendChild(tag);
                 });
             }
+            updateUI();
 
             // 4. Search Filter
             searchInput.oninput = (e) => {
@@ -573,27 +420,6 @@
 
         passwordInput.addEventListener('input', checkPasswordMatch);
         confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-
-        // Age Calculator
-        const dobInput = document.querySelector('input[name="DateOfBirth"]');
-        const ageDisplay = document.getElementById('ageDisplay');
-
-        dobInput.addEventListener('change', function() {
-            const dob = new Date(this.value);
-            const today = new Date();
-            let age = today.getFullYear() - dob.getFullYear();
-            const monthDiff = today.getMonth() - dob.getMonth();
-
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-                age--;
-            }
-
-            if (age >= 0 && age < 120) {
-                ageDisplay.value = age + ' years old';
-            } else {
-                ageDisplay.value = 'Invalid date';
-            }
-        });
 
         // Form Submit Loading State
         const form = document.getElementById('tutorForm');

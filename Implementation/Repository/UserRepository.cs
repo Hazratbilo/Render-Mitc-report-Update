@@ -77,6 +77,7 @@ namespace MITCRMS.Implementation.Repository
                   .Include(p => p.Department)
                   .Include(u => u.UserRoles)
                   .ThenInclude(ur => ur.Role)
+                   .Where(u => u.Id == UserId)
                    .AsSplitQuery()
                   .AsNoTracking()
                   .SingleOrDefaultAsync();

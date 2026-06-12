@@ -9,6 +9,7 @@ using MITCRMS.Models.DTOs.Report;
 using MITCRMS.Models.DTOs.Role;
 using MITCRMS.Models.DTOs.Users;
 using MITCRMS.Models.Entities;
+using System.Linq;
 
 namespace MITCRMS.Implementation.Services
 {
@@ -73,54 +74,65 @@ namespace MITCRMS.Implementation.Services
 
             try
             {
-                var User = new User
+                if (request.RoleIds == null || !request.RoleIds.Any())
+                {
+                    return new BaseResponse<bool>
+                    {
+                        Message = "At least one role must be selected",
+                        Status = false
+                    };
+                }
+
+                var roleIds = await _roleRepository.GetRolesByIdsAsync(r => request.RoleIds.Contains(r.Id));
+                var roles = roleIds.Select(r => r.RoleName).ToList();
+                if (roles.Count != request.RoleIds.Distinct().Count())
+                {
+                    return new BaseResponse<bool>
+                    {
+                        Message = "One or more selected roles cannot be found",
+                        Status = false
+                    };
+                }
+
+                await using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+                var user = new User
                 {
                     Email = request.Email,
-                    PasswordHash = _identityService.GetPasswordHash(request.PasswordHash),
                     FirstName = request.FirstName,
                     LastName = request.LastName,
                     Address = request.Address,
                     PhoneNumber = request.PhoneNumber,
                     DateCreated = DateTime.UtcNow,
                     DepartmentId = dept.Id,
-                    
-
                 };
 
-                var newUser = await _userManager.CreateAsync(User);
-                if (newUser == null)
+                var newUser = await _userManager.CreateAsync(user, request.PasswordHash);
+                if (!newUser.Succeeded)
                 {
-                    _logger.LogError("User Creation unsuccessful");
+                    var errors = string.Join(" ", newUser.Errors.Select(e => e.Description));
+                    _logger.LogError("User creation unsuccessful: {Errors}", errors);
                     return new BaseResponse<bool>
                     {
-                        Message = "User Creation unsuccessful",
+                        Message = string.IsNullOrWhiteSpace(errors) ? "User creation unsuccessful" : errors,
                         Status = false
                     };
 
                 }
 
-                var roleIds = await _roleRepository.GetRolesByIdsAsync(r => request.RoleIds.Contains(r.Id));
-                var roles = roleIds.Select(r => r.RoleName).ToList();
-
-                if(roles is null || !roles.Any())
-                {
-                    return new BaseResponse<bool>
-                    {
-                        Message = "Roles cannot be found"
-                    };
-                }
-
-                var result = await _userManager.AddToRolesAsync(User, roles);
+                var result = await _userManager.AddToRolesAsync(user, roles);
                 if (!result.Succeeded)
                 {
-                    _logger.LogError("Unable to add user to roles");
+                    var errors = string.Join(" ", result.Errors.Select(e => e.Description));
+                    _logger.LogError("Unable to add user to roles: {Errors}", errors);
                     return new BaseResponse<bool>
                     {
-                        Message = "Unable to add user to roles",
+                        Message = string.IsNullOrWhiteSpace(errors) ? "Unable to add user to roles" : errors,
                         Status = false
                     };
                 }
 
+                await transaction.CommitAsync();
                 _logger.LogInformation("User added successfully");
                 return new BaseResponse<bool>
                 {
@@ -130,10 +142,10 @@ namespace MITCRMS.Implementation.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error  creating User, rolling back.....");
+                _logger.LogError(ex, "Error creating user");
                 return new BaseResponse<bool>
                 {
-                    Message = "Error  creating User, rolling back.....",
+                    Message = "Error creating user. Please try again or contact support.",
                     Status = false
                 };
             }
@@ -176,13 +188,13 @@ namespace MITCRMS.Implementation.Services
             {
                 Message = "SuperAdmin profile fetched",
                 Status = true,
-                Data = new UserDto
-                {
-                    Id = user.Id,
-                    Email = user.Email,
-                    Roles = role.Select(r => new RoleDto { Name = role }).ToList(),
-                }
-            };
+                    Data = new UserDto
+                    {
+                        Id = user.Id,
+                        Email = user.Email,
+                        Roles = roles.Select(r => new RoleDto { Name = r }).ToList(),
+                    }
+                };
         }
 
 
@@ -220,7 +232,7 @@ namespace MITCRMS.Implementation.Services
                 {
                     UserId = user.Id,
                     Email = user.Email,
-                    Roles = role.Select(r => new RoleDto { Name = role }).ToList(),
+                    Roles = roles.Select(r => new RoleDto { Name = r }).ToList(),
                     FirstName = user != null ? $"{user.FirstName}" : string.Empty,
                     FullName = user != null ? $"{user.FullName()}" : string.Empty,
                     DepartmentId = user!.DepartmentId,

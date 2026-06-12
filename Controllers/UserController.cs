@@ -128,18 +128,29 @@ namespace MITCRMS.Controllers
             ViewData["Departments"] = new SelectList(departments.Data, "Id", "DepartmentName");
             ViewData["Roles"] = new MultiSelectList(roles.Data, "Id", "Name");
 
-            Console.WriteLine(ViewData["Roles"]);
-
             return View();
         }
         [HttpPost]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> CreateUser(CreateUserRequestModel model)
         {
-
-            var userStatus = await _userService.CreateUserAsync(model);
             var roles = await _roleServices.GetRolesAsync();
             var departments = await _departmentServices.GetAllDepartmentsAsync();
+
+            if (departments?.Data == null || !departments.Data.Any())
+            {
+                return RedirectToAction("CreateDepartment", "Department");
+            }
+
+            ViewData["Departments"] = new SelectList(departments.Data, "Id", "DepartmentName", model.DepartmentId);
+            ViewData["Roles"] = new MultiSelectList(roles.Data, "Id", "Name", model.RoleIds);
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var userStatus = await _userService.CreateUserAsync(model);
             if (userStatus.Status)
             {
                 ViewBag.Alert = userStatus.Status;
@@ -155,15 +166,6 @@ namespace MITCRMS.Controllers
                 ModelState.AddModelError("Email", userStatus.Message);
                 
             }
-            if (departments?.Data == null || !departments.Data.Any())
-            {
-                return RedirectToAction("CreateDepartment", "Department");
-            }
-
-            ViewData["Departments"] = new SelectList(departments.Data, "Id", "DepartmentName");
-            ViewData["Roles"] = new MultiSelectList(roles.Data, "Id", "Name");
-
-            Console.WriteLine(ViewData["Roles"]);
             return View(model);
         }
         [HttpGet]
@@ -171,7 +173,6 @@ namespace MITCRMS.Controllers
         public async Task<IActionResult> Userprofile()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Console.WriteLine(User.FindFirstValue(ClaimTypes.GivenName));
 
             if (string.IsNullOrEmpty(userIdString))
             {
@@ -195,7 +196,6 @@ namespace MITCRMS.Controllers
         public async Task<IActionResult> GetMyReport()
         {
             var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Console.WriteLine(User.FindFirstValue(ClaimTypes.GivenName));
 
             if (string.IsNullOrEmpty(userIdString))
             {

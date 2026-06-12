@@ -70,7 +70,8 @@ namespace MITCRMS.Identity
                 throw new ArgumentNullException(nameof(normalizedRoleName));
             }
 #pragma warning disable CS8603 
-            return await _context.Set<Role>().FirstOrDefaultAsync(u => u.RoleName == normalizedRoleName, cancellationToken);
+            var normalizedName = normalizedRoleName.ToUpper();
+            return await _context.Set<Role>().FirstOrDefaultAsync(u => u.RoleName.ToUpper() == normalizedName, cancellationToken);
 #pragma warning restore CS8603 
         }
 
@@ -117,7 +118,6 @@ namespace MITCRMS.Identity
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            role.RoleName = normalizedName.ToLower();
             return Task.CompletedTask;
         }
 

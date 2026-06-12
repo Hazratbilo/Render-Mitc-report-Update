@@ -23,7 +23,9 @@ namespace MITCRMS.Identity
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            var role = await _context.Set<Role>().SingleAsync(r => r.RoleName == roleName, cancellationToken: cancellationToken);
+            var normalizedRoleName = roleName.ToUpper();
+            var role = await _context.Set<Role>()
+                .SingleAsync(r => r.RoleName.ToUpper() == normalizedRoleName, cancellationToken: cancellationToken);
             await _context.Set<UserRole>().AddAsync(new UserRole
             {
                 UserId = user.Id,
@@ -65,14 +67,14 @@ namespace MITCRMS.Identity
         public async Task<User> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
 #pragma warning restore CS8613
         {
-            normalizedEmail = normalizedEmail.ToLower();
+            normalizedEmail = normalizedEmail.ToUpper();
             cancellationToken.ThrowIfCancellationRequested();
             if (string.IsNullOrEmpty(normalizedEmail))
             {
                 throw new ArgumentNullException(nameof(normalizedEmail));
             }
 #pragma warning disable CS8603 // Possible null reference return.
-            return await _context.Set<User>().SingleOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
+            return await _context.Set<User>().SingleOrDefaultAsync(u => u.Email.ToUpper() == normalizedEmail, cancellationToken);
 #pragma warning restore CS8603 // Possible null reference return.
         }
 
@@ -100,7 +102,8 @@ namespace MITCRMS.Identity
                 throw new ArgumentNullException(nameof(userName));
             }
 #pragma warning disable CS8603 // Possible null reference return.
-            return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == userName, cancellationToken);
+            var normalizedUserName = userName.ToUpper();
+            return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email.ToUpper() == normalizedUserName, cancellationToken);
 #pragma warning restore CS8603 // Possible null reference return.
         }
 
@@ -239,8 +242,9 @@ namespace MITCRMS.Identity
             {
                 throw new ArgumentNullException(nameof(user));
             }
+            var normalizedRoleName = roleName.ToUpper();
             var isInRole = await _context.Set<UserRole>().Include(u => u.Role)
-                .Where(u => u.Role.RoleName.ToLower() == roleName.ToLower() && u.UserId == user.Id)
+                .Where(u => u.Role.RoleName.ToUpper() == normalizedRoleName && u.UserId == user.Id)
                 .AnyAsync(cancellationToken);
             return isInRole;
         }
@@ -312,7 +316,13 @@ namespace MITCRMS.Identity
         public Task SetPasswordHashAsync(User user, string passwordHash, CancellationToken cancellationToken)
 #pragma warning restore CS8767 // Nullability of reference types in type of parameter doesn't match implicitly implemented member (possibly because of nullability attributes).
         {
-            throw new NotImplementedException();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            user.PasswordHash = passwordHash;
+            return Task.CompletedTask;
         }
 
 
