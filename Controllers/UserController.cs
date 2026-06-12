@@ -11,6 +11,7 @@ using MITCRMS.Models.DTOs.Report;
 using MITCRMS.Models.DTOs.Users;
 using MITCRMS.Models.Entities;
 using System.Security.Claims;
+using System.Linq;
 
 namespace MITCRMS.Controllers
 {
@@ -142,11 +143,23 @@ namespace MITCRMS.Controllers
                 return RedirectToAction("CreateDepartment", "Department");
             }
 
-            ViewData["Departments"] = new SelectList(departments.Data, "Id", "DepartmentName", model.DepartmentId);
-            ViewData["Roles"] = new MultiSelectList(roles.Data, "Id", "Name", model.RoleIds);
+            ViewData["Departments"] = new SelectList(departments.Data, "Id", "DepartmentName", model?.DepartmentId);
+            ViewData["Roles"] = new MultiSelectList(roles.Data, "Id", "Name", model?.RoleIds);
 
             if (!ModelState.IsValid)
             {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                _logger.LogWarning("CreateUser: ModelState invalid. Errors: {Errors}. Model summary: Email={Email}, DepartmentId={DepartmentId}, RoleCount={RoleCount}",
+                    string.Join("; ", errors), model?.Email, model?.DepartmentId, model?.RoleIds?.Count ?? 0);
+
+                foreach (var kv in ModelState)
+                {
+                    if (kv.Value.Errors.Any())
+                    {
+                        _logger.LogWarning("Field {Field} errors: {Errors}", kv.Key, string.Join("; ", kv.Value.Errors.Select(e => e.ErrorMessage)));
+                    }
+                }
+
                 return View(model);
             }
 
