@@ -116,7 +116,14 @@ namespace MITCRMS.Implementation.Repository
         public async Task<Report> GetReportById(Guid id)
         {
 #pragma warning disable CS8603 // Possible null reference return.
-            return await _mitcrmsContext.Set<Report>().Include(r => r.User).FirstOrDefaultAsync(x => x.Id == id);
+#pragma warning disable CS8602
+            return await _mitcrmsContext.Set<Report>()
+                .Where(x => x.Id == id)
+                .Include(r => r.User)
+                .ThenInclude(u => u.Department)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+#pragma warning restore CS8602
 #pragma warning restore CS8603 // Possible null reference return.
 
         }
