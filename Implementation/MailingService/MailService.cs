@@ -92,6 +92,46 @@ namespace Mitc_report_Update.Implementation.MailingService
             }
         }
 
+        public async Task<bool> SendStaffInviteMail(string email, string name, string signupLink, string roles, DateTime expiresAt)
+        {
+            try
+            {
+                var model = new SendStaffInvite()
+                {
+                    Name = name,
+                    Email = email,
+                    Title = "Complete Your Staff Signup",
+                    SignupLink = signupLink,
+                    Roles = roles,
+                    ExpiresAt = expiresAt
+                };
+
+                var mailBody = await _razorEngine.ParseAsync("SendStaffInviteMail", model);
+
+#pragma warning disable CS8625
+                return await _mailSender.SendEmailAsync(
+                    _emailConfiguration.FromEmail,
+                    _emailConfiguration.FromName,
+                    email,
+                    name,
+                    model.Title,
+                    mailBody,
+                    null
+                );
+#pragma warning restore CS8625
+            }
+            catch (RazorEngineException ex)
+            {
+                _logger.LogError(ex.Message);
+                return false;
+            }
+            catch (MailSenderException ex)
+            {
+                _logger.LogError(ex.Message);
+                return false;
+            }
+        }
+
         //        public async Task<bool> SendReportStatus(string email, string name, string title, string status)
         //        {
         //            try

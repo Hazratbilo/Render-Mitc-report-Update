@@ -40,9 +40,9 @@
                     <div>
                         <h5 class="mb-1 fw-bold text-dark">
                             <i class="fas fa-chalkboard-teacher text-primary me-2"></i>
-                            Create New Staff
+                            Invite New Staff
                         </h5>
-                        <p class="text-muted mb-0 small">Fill in the Staff information below</p>
+                        <p class="text-muted mb-0 small">Fill in the staff information and send a signup invitation</p>
                     </div>
                     @* <a asp-action="Index" class="btn btn-light btn-sm">
                         <i class="fas fa-arrow-left me-1"></i> Back to List
@@ -177,69 +177,6 @@
 
 
 
-                    <!-- Account Security Section -->
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-dark mb-3 pb-2 border-bottom">
-                            <i class="fas fa-lock text-primary me-2"></i>
-                            Account Security
-                        </h6>
-
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label asp-for="PasswordHash" class="form-label fw-semibold">
-                                    Password <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0">
-                                        <i class="fas fa-key text-muted"></i>
-                                    </span>
-                                    <input asp-for="PasswordHash"
-                                           type="password"
-                                           id="passwordInput"
-                                           class="form-control border-start-0 border-end-0 ps-0"
-                                           placeholder="Enter password" />
-                                    <button type="button" class="btn btn-light border border-start-0" id="togglePassword">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                                <div class="form-text small">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Password must be at least 8 characters long
-                                </div>
-                                <span asp-validation-for="PasswordHash" class="text-danger small"></span>
-
-                                <!-- Password Strength Indicator -->
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 5px;">
-                                        <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    <small id="passwordStrengthText" class="text-muted"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label asp-for="ConfirmPassword" class="form-label fw-semibold">
-                                    Confirm Password <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0">
-                                        <i class="fas fa-key text-muted"></i>
-                                    </span>
-                                    <input asp-for="ConfirmPassword"
-                                           type="password"
-                                           id="confirmPasswordInput"
-                                           class="form-control border-start-0 border-end-0 ps-0"
-                                           placeholder="Re-enter password" />
-                                    <button type="button" class="btn btn-light border border-start-0" id="toggleConfirmPassword">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
-                                <div id="passwordMatchMessage" class="mt-1"></div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Form Actions -->
                     <div class="border-top pt-4 mt-4">
                         <div class="d-flex gap-2 justify-content-end">
@@ -250,7 +187,7 @@
                                 <i class="fas fa-redo me-2"></i>Reset
                             </button>
                             <button type="submit" class="btn btn-primary px-4" id="submitBtn">
-                                <i class="fas fa-save me-2"></i>Create Staff
+                                <i class="fas fa-paper-plane me-2"></i>Send Invite
                             </button>
                         </div>
                     </div>
@@ -268,7 +205,7 @@
                         <ul class="small text-muted mb-0 ps-3">
                             <li>All fields marked with <span class="text-danger">*</span> are required</li>
                             <li>Email address must be valid and unique in the system</li>
-                            <li>Password must be at least 8 characters and match confirmation</li>
+                            <li>The signup link can only be used once and expires after five minutes</li>
                             <li>Select at least one role before creating the staff account</li>
                         </ul>
                     </div>
@@ -351,79 +288,6 @@
                 }
             });
         });
-        // Password Toggle Functionality
-        function togglePasswordVisibility(inputId, buttonId) {
-            const input = document.getElementById(inputId);
-            const button = document.getElementById(buttonId);
-            const icon = button.querySelector('i');
-
-            button.addEventListener('click', function() {
-                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-                input.setAttribute('type', type);
-                icon.classList.toggle('fa-eye');
-                icon.classList.toggle('fa-eye-slash');
-            });
-        }
-
-        togglePasswordVisibility('passwordInput', 'togglePassword');
-        togglePasswordVisibility('confirmPasswordInput', 'toggleConfirmPassword');
-
-        // Password Strength Checker
-        const passwordInput = document.getElementById('passwordInput');
-        const passwordStrength = document.getElementById('passwordStrength');
-        const passwordStrengthText = document.getElementById('passwordStrengthText');
-
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            let strength = 0;
-
-            if (password.length >= 6) strength += 25;
-            if (password.length >= 10) strength += 25;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
-            if (/[0-9]/.test(password)) strength += 12.5;
-            if (/[^a-zA-Z0-9]/.test(password)) strength += 12.5;
-
-            passwordStrength.style.width = strength + '%';
-
-            if (strength <= 25) {
-                passwordStrength.className = 'progress-bar bg-danger';
-                passwordStrengthText.textContent = 'Weak';
-                passwordStrengthText.className = 'text-danger small';
-            } else if (strength <= 50) {
-                passwordStrength.className = 'progress-bar bg-warning';
-                passwordStrengthText.textContent = 'Fair';
-                passwordStrengthText.className = 'text-warning small';
-            } else if (strength <= 75) {
-                passwordStrength.className = 'progress-bar bg-info';
-                passwordStrengthText.textContent = 'Good';
-                passwordStrengthText.className = 'text-info small';
-            } else {
-                passwordStrength.className = 'progress-bar bg-success';
-                passwordStrengthText.textContent = 'Strong';
-                passwordStrengthText.className = 'text-success small';
-            }
-        });
-
-        // Password Match Checker
-        const confirmPasswordInput = document.getElementById('confirmPasswordInput');
-        const passwordMatchMessage = document.getElementById('passwordMatchMessage');
-
-        function checkPasswordMatch() {
-            if (confirmPasswordInput.value === '') {
-                passwordMatchMessage.innerHTML = '';
-                return;
-            }
-
-            if (passwordInput.value === confirmPasswordInput.value) {
-                passwordMatchMessage.innerHTML = '<small class="text-success"><i class="fas fa-check-circle me-1"></i>Passwords match</small>';
-            } else {
-                passwordMatchMessage.innerHTML = '<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Passwords do not match</small>';
-            }
-        }
-
-        passwordInput.addEventListener('input', checkPasswordMatch);
-        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-
         // Form Submit Loading State
         const form = document.getElementById('tutorForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -434,7 +298,7 @@
                 e.stopPropagation();
             } else {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending invite...';
             }
             form.classList.add('was-validated');
         });

@@ -27,6 +27,7 @@ namespace MITCRMS.Controllers
         [HttpGet]
         public IActionResult Login()
         {
+            ViewBag.SuccessMessage = TempData["Success"];
             return View();
         }
         [HttpGet]
@@ -196,9 +197,7 @@ namespace MITCRMS.Controllers
             var userStatus = await _userService.CreateUserAsync(model);
             if (userStatus.Status)
             {
-                ViewBag.Alert = userStatus.Status;
-                ViewBag.AlertType = "success";
-                ViewBag.Success = userStatus.Message;
+                TempData["Success"] = userStatus.Message;
 
                 return RedirectToAction("GetAllUsersWithRoles");
             }
@@ -213,6 +212,49 @@ namespace MITCRMS.Controllers
             }
             return View(model);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> CompleteSignup(string token)
+        {
+            var invite = await _userService.GetStaffSignupInviteAsync(token);
+            if (!invite.Status)
+            {
+                ViewBag.Failed = invite.Message;
+                return View(new CompleteStaffSignupRequestModel { Token = token });
+            }
+
+            return View(invite.Data);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CompleteSignup(CompleteStaffSignupRequestModel model)
+        {
+            var invite = await _userService.GetStaffSignupInviteAsync(model.Token);
+            if (!invite.Status)
+            {
+                ViewBag.Failed = invite.Message;
+                return View(model);
+            }
+
+            model.Email = invite.Data.Email;
+            model.FullName = invite.Data.FullName;
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var response = await _userService.CompleteStaffSignupAsync(model);
+            if (!response.Status)
+            {
+                ViewBag.Failed = response.Message;
+                return View(model);
+            }
+
+            TempData["Success"] = response.Message;
+            return RedirectToAction("Login");
+        }
+
         [HttpGet]
         [Authorize(Roles = "SuperAdmin,User")]
         public async Task<IActionResult> Userprofile()

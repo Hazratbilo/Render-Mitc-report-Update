@@ -63,6 +63,7 @@ builder.Services.AddIdentity<User, Role>()
     .AddDefaultTokenProviders();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IMailSender, MailSender>();
 builder.Services.Configure<EmailConfiguration>(builder.Configuration.GetSection("EmailConfiguration"));

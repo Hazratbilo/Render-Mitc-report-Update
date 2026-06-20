@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Mitc_report_Update.Interface.MailingService;
 using MITCRMS.Interface.Repository;
 using MITCRMS.Interface.Services;
 using MITCRMS.Models.DTOs;
@@ -6,6 +7,8 @@ using MITCRMS.Models.DTOs.Role;
 using MITCRMS.Models.DTOs.Users;
 using MITCRMS.Models.Entities;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace MITCRMS.Implementation.Services
 {
@@ -16,17 +19,26 @@ namespace MITCRMS.Implementation.Services
         private readonly ILogger<UserService> _logger;
         private readonly IDepartmentRepository _departmentRepository;
         private readonly IRoleRepository _roleRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMailService _mailService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public UserService(IUserRepository userRepository,
             UserManager<User> userManager,
                 IDepartmentRepository departmentRepository,
                  IRoleRepository roleRepository,
+                 IUnitOfWork unitOfWork,
+                 IMailService mailService,
+                 IHttpContextAccessor httpContextAccessor,
             ILogger<UserService> logger)
         {
             _userRepository = userRepository;
             _userManager = userManager;
             _departmentRepository = departmentRepository;
             _roleRepository = roleRepository;
+            _unitOfWork = unitOfWork;
+            _mailService = mailService;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
        
@@ -55,6 +67,20 @@ namespace MITCRMS.Implementation.Services
                 return new BaseResponse<bool>
                 {
                     Message = "User with email already exist",
+                    Status = false
+                };
+            }
+
+            var pendingInvite = await _userRepository.Get<StaffInvitation>(i =>
+                i.Email.ToLower() == request.Email &&
+                i.UsedAt == null &&
+                i.ExpiresAt > DateTime.UtcNow);
+
+            if (pendingInvite != null)
+            {
+                return new BaseResponse<bool>
+                {
+                    Message = "A valid signup invitation has already been sent to this email",
                     Status = false
                 };
             }
@@ -91,47 +117,50 @@ namespace MITCRMS.Implementation.Services
                     };
                 }
 
-                var user = new User
+                var token = GenerateToken();
+                var expiresAt = DateTime.UtcNow.AddMinutes(5);
+                var invite = new StaffInvitation
                 {
-                    Email = request.Email,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
                     Address = request.Address,
                     PhoneNumber = request.PhoneNumber,
+                    Email = request.Email,
                     DateCreated = DateTime.UtcNow,
                     DepartmentId = dept.Id,
+                    RoleIds = string.Join(",", request.RoleIds.Distinct()),
+                    TokenHash = HashToken(token),
+                    ExpiresAt = expiresAt
                 };
 
-                var newUser = await _userManager.CreateAsync(user, request.PasswordHash);
-                if (!newUser.Succeeded)
+                await _userRepository.Add(invite);
+                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+                var mailSent = await _mailService.SendStaffInviteMail(
+                    request.Email,
+                    $"{request.FirstName} {request.LastName}",
+                    BuildSignupLink(token),
+                    string.Join(", ", roles),
+                    expiresAt);
+
+                if (!mailSent)
                 {
-                    var errors = string.Join(" ", newUser.Errors.Select(e => e.Description));
-                    _logger.LogError("User creation unsuccessful: {Errors}", errors);
+                    invite.UsedAt = DateTime.UtcNow;
+                    _userRepository.Update(invite);
+                    await _unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+                    _logger.LogError("Unable to send staff invitation email to {Email}", request.Email);
                     return new BaseResponse<bool>
                     {
-                        Message = string.IsNullOrWhiteSpace(errors) ? "User creation unsuccessful" : errors,
-                        Status = false
-                    };
-
-                }
-
-                var result = await _userManager.AddToRolesAsync(user, roles);
-                if (!result.Succeeded)
-                {
-                    var errors = string.Join(" ", result.Errors.Select(e => e.Description));
-                    _logger.LogError("Unable to add user to roles: {Errors}", errors);
-                    await _userManager.DeleteAsync(user);
-                    return new BaseResponse<bool>
-                    {
-                        Message = string.IsNullOrWhiteSpace(errors) ? "Unable to add user to roles" : errors,
+                        Message = "Unable to send signup invitation email",
                         Status = false
                     };
                 }
 
-                _logger.LogInformation("User added successfully");
+                _logger.LogInformation("Staff invitation sent successfully");
                 return new BaseResponse<bool>
                 {
-                    Message = "User added successfully",
+                    Message = "Staff invitation sent successfully",
                     Status = true
                 };
             }
@@ -145,6 +174,162 @@ namespace MITCRMS.Implementation.Services
                 };
             }
         }
+
+        public async Task<BaseResponse<CompleteStaffSignupRequestModel>> GetStaffSignupInviteAsync(string token)
+        {
+            var invite = await GetValidInviteAsync(token);
+            if (invite == null)
+            {
+                return new BaseResponse<CompleteStaffSignupRequestModel>
+                {
+                    Message = "Signup link is invalid, expired, or already used",
+                    Status = false
+                };
+            }
+
+            return new BaseResponse<CompleteStaffSignupRequestModel>
+            {
+                Message = "Signup invite fetched",
+                Status = true,
+                Data = new CompleteStaffSignupRequestModel
+                {
+                    Token = token,
+                    Email = invite.Email,
+                    FullName = $"{invite.FirstName} {invite.LastName}"
+                }
+            };
+        }
+
+        public async Task<BaseResponse<bool>> CompleteStaffSignupAsync(CompleteStaffSignupRequestModel request)
+        {
+            var invite = await GetValidInviteAsync(request.Token);
+            if (invite == null)
+            {
+                return new BaseResponse<bool>
+                {
+                    Message = "Signup link is invalid, expired, or already used",
+                    Status = false
+                };
+            }
+
+            var userExists = await _userRepository.Any(u => u.Email.ToLower() == invite.Email.ToLower());
+            if (userExists)
+            {
+                invite.UsedAt = DateTime.UtcNow;
+                _userRepository.Update(invite);
+                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+                return new BaseResponse<bool>
+                {
+                    Message = "A staff account already exists for this email",
+                    Status = false
+                };
+            }
+
+            var roleIds = invite.RoleIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(Guid.Parse)
+                .ToList();
+
+            var selectedRoles = await _roleRepository.GetRolesByIdsAsync(r => roleIds.Contains(r.Id));
+            var roles = selectedRoles.Select(r => r.RoleName).ToList();
+            if (roles.Count != roleIds.Distinct().Count())
+            {
+                return new BaseResponse<bool>
+                {
+                    Message = "One or more invited roles cannot be found",
+                    Status = false
+                };
+            }
+
+            var user = new User
+            {
+                Email = invite.Email,
+                FirstName = invite.FirstName,
+                LastName = invite.LastName,
+                Address = invite.Address,
+                PhoneNumber = invite.PhoneNumber,
+                DepartmentId = invite.DepartmentId,
+                EmailConfirmed = true,
+                DateCreated = DateTime.UtcNow
+            };
+
+            var newUser = await _userManager.CreateAsync(user, request.Password);
+            if (!newUser.Succeeded)
+            {
+                var errors = string.Join(" ", newUser.Errors.Select(e => e.Description));
+                _logger.LogError("Staff signup unsuccessful: {Errors}", errors);
+                return new BaseResponse<bool>
+                {
+                    Message = string.IsNullOrWhiteSpace(errors) ? "Staff signup unsuccessful" : errors,
+                    Status = false
+                };
+            }
+
+            var roleResult = await _userManager.AddToRolesAsync(user, roles);
+            if (!roleResult.Succeeded)
+            {
+                var errors = string.Join(" ", roleResult.Errors.Select(e => e.Description));
+                _logger.LogError("Unable to add staff to roles: {Errors}", errors);
+                await _userManager.DeleteAsync(user);
+                return new BaseResponse<bool>
+                {
+                    Message = string.IsNullOrWhiteSpace(errors) ? "Unable to add staff to roles" : errors,
+                    Status = false
+                };
+            }
+
+            invite.UsedAt = DateTime.UtcNow;
+            _userRepository.Update(invite);
+            await _unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+            return new BaseResponse<bool>
+            {
+                Message = "Signup completed successfully. You can now log in.",
+                Status = true
+            };
+        }
+
+        private async Task<StaffInvitation?> GetValidInviteAsync(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return null;
+            }
+
+            var tokenHash = HashToken(token);
+            return await _userRepository.Get<StaffInvitation>(i =>
+                i.TokenHash == tokenHash &&
+                i.UsedAt == null &&
+                i.ExpiresAt > DateTime.UtcNow);
+        }
+
+        private string BuildSignupLink(string token)
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+            {
+                return $"/User/CompleteSignup?token={Uri.EscapeDataString(token)}";
+            }
+
+            return $"{request.Scheme}://{request.Host}{request.PathBase}/User/CompleteSignup?token={Uri.EscapeDataString(token)}";
+        }
+
+        private static string GenerateToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToBase64String(bytes)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .TrimEnd('=');
+        }
+
+        private static string HashToken(string token)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+            return Convert.ToHexString(bytes);
+        }
+
         public async Task<BaseResponse<UserDto>> GetUserProfileByUserId(Guid UserId, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetUserProfile(UserId);

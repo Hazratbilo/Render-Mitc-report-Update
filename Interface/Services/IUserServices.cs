@@ -7,6 +7,8 @@ namespace MITCRMS.Interface.Services
     public interface IUserServices
     {
         Task<BaseResponse<bool>> CreateUserAsync(CreateUserRequestModel request);
+        Task<BaseResponse<CompleteStaffSignupRequestModel>> GetStaffSignupInviteAsync(string token);
+        Task<BaseResponse<bool>> CompleteStaffSignupAsync(CompleteStaffSignupRequestModel request);
    
         public Task<BaseResponse<LoginResponseModel>> LoginAsync(LoginRequestModel request, CancellationToken cancellationToken);
         public Task<BaseResponse<UserDto>> GetUserProfileByUserId(Guid userId, CancellationToken cancellationToken);

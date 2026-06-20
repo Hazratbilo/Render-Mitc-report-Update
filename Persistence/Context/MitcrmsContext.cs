@@ -32,14 +32,23 @@ namespace MITCRMS.Persistence.Context
                                 .WithMany(r => r.UserRoles)
                                 .HasForeignKey(ur => ur.RoleId);
 
-                            builder.Entity<User>()
+                    builder.Entity<User>()
                             .HasIndex(u => u.Email)
+                            .IsUnique();
+
+                    builder.Entity<StaffInvitation>()
+                            .HasIndex(i => i.TokenHash)
                             .IsUnique();
 
                     builder.Entity<User>()
                 .HasOne(u => u.Department)
                 .WithMany(d => d.Users)
                 .HasForeignKey(u => u.DepartmentId);
+
+                    builder.Entity<StaffInvitation>()
+                .HasOne(i => i.Department)
+                .WithMany()
+                .HasForeignKey(i => i.DepartmentId);
 
                 builder.Entity<User>()
                 .HasMany(u => u.Reports)
@@ -148,5 +157,6 @@ namespace MITCRMS.Persistence.Context
             DbSet<Department> Departments => Set<Department>();
             DbSet<Report> Reports => Set<Report>();
         DbSet<Role> Roles => Set<Role>();
+        DbSet<StaffInvitation> StaffInvitations => Set<StaffInvitation>();
         }
 }
