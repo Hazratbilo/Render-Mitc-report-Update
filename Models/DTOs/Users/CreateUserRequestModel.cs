@@ -22,8 +22,6 @@ namespace MITCRMS.Models.DTOs.Users
 
         //public List<SelectListItem> Departments { get; set; }
 #pragma warning restore CS8618 
-        public string PasswordHash { get; set; }
-        public string ConfirmPassword { get; set; }
         public string PhoneNumber { get; set; }
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 

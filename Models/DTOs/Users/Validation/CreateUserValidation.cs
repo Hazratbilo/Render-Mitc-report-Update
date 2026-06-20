@@ -15,6 +15,8 @@ namespace MITCRMS.Models.DTOs.Users.Validation
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email is required");
 
+            RuleFor(x => x.Address).NotEmpty().WithMessage("Address is required");
+
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone Number is required")
                 .Matches(@"^\+?[1-9]\d{1,14}$").WithMessage("Invalid phone number format");
