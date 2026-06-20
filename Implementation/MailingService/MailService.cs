@@ -32,8 +32,8 @@ namespace Mitc_report_Update.Implementation.MailingService
                     Name = name,
                     Email = email,
                     Title = title,
-                    Message = body
-
+                    Message = body,
+                    ActionLink = GetLoginUrl()
                 };
                 var mailBody = await _razorEngine.ParseAsync("SendReportReminderMail", model);
                 return await _mailSender.SendEmailAsync(_emailConfiguration.FromEmail, _emailConfiguration.FromName, email, name, title, mailBody);
@@ -62,7 +62,7 @@ namespace Mitc_report_Update.Implementation.MailingService
                     Message = status, 
                     Status = status,
                     SubmittedOn = DateTime.UtcNow,
-
+                    ActionLink = GetLoginUrl()
                 };
 
                 var mailBody = await _razorEngine.ParseAsync("SendReportStatusMail", model);
@@ -194,5 +194,12 @@ namespace Mitc_report_Update.Implementation.MailingService
         //                return false;
         //            }
         //        }
+
+        private string GetLoginUrl()
+        {
+            return string.IsNullOrWhiteSpace(_emailConfiguration.LoginUrl)
+                ? "https://render-mitc-report-update.onrender.com/"
+                : _emailConfiguration.LoginUrl.Trim();
+        }
     }
 }

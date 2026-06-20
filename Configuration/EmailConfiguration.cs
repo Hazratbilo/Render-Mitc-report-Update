@@ -9,5 +9,6 @@ namespace Mitc_report_Update.Configuration
     {
         public string FromEmail { get; set; } = "alatoyebilal14@gmail.com";
         public string FromName { get; set; } = "MITCRMS";
+        public string LoginUrl { get; set; } = "https://render-mitc-report-update.onrender.com/";
     }
 }

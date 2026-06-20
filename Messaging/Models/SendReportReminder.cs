@@ -8,6 +8,7 @@
         #pragma warning disable CS8618
         public string Message { get; set; }
 #pragma warning restore CS8618
-        public string ActionText { get; set; } = "Open Report Portal";
+        public string ActionText { get; set; } = "Login to Portal";
+        public string ActionLink { get; set; }
     }
 }
