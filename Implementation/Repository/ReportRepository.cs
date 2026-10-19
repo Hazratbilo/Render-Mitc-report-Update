@@ -185,7 +185,9 @@ namespace MITCRMS.Implementation.Repository
             var (year, weekNumber) = ReportingWeekHelper.GetCurrentReportingWeek();
 
             return await _mitcrmsContext.Set<User>()
-                .Where(u => !_mitcrmsContext.Set<Report>()
+                .Where(u => u.EmailConfirmed
+                && !u.UserRoles.Any(userRole => userRole.Role.RoleName == "SuperAdmin")
+                && !_mitcrmsContext.Set<Report>()
                 .Any(r => r.UserID == u.Id && 
                 r.Year == year &&
                 r.WeekNumber == weekNumber))

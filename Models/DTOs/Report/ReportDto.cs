@@ -12,6 +12,7 @@ namespace MITCRMS.Models.DTOs.Report
         public DateTime DateCreated { get; set; }
 
         public Guid? UserId { get; set; }
+        public Guid? DepartmentId { get; set; }
 #pragma warning disable CS8618 
         public UserDto User { get; set; }
 #pragma warning restore CS8618 

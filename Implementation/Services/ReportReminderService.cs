@@ -7,10 +7,12 @@ using MITCRMS.Models.Enum;
 namespace MITCRMS.Implementation.Services
 {
     public class ReportReminderService(IReportRepository reportRepository,
-    Mitc_report_Update.Interface.MailingService.IMailService mailService) : IReportReminderService
+    Mitc_report_Update.Interface.MailingService.IMailService mailService,
+    ILogger<ReportReminderService> logger) : IReportReminderService
     {
         private readonly IReportRepository _reportRepository = reportRepository ?? throw new ArgumentNullException(nameof(reportRepository));
         private readonly Mitc_report_Update.Interface.MailingService.IMailService _mailService = mailService ?? throw new ArgumentNullException(nameof(mailService));
+        private readonly ILogger<ReportReminderService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         public async Task<BaseResponse> ProcessRemindersAsync(ReminderLevel level)
         {
             var defaulters = await _reportRepository.GetStaffWithoutReportWeek();
@@ -28,10 +30,13 @@ namespace MITCRMS.Implementation.Services
             foreach (var staff in defaulters)
             {
                 var (subject, body) = BuildMessage(level);
-                Console.WriteLine($"Email: {staff.Email}");
                 var isSent = await _mailService.SendReminderMail(staff.Email, staff.FirstName, subject, body);
 
-                if (!isSent) anyFailure = true;
+                if (!isSent)
+                {
+                    anyFailure = true;
+                    _logger.LogWarning("Weekly report reminder failed for staff user {UserId} at level {ReminderLevel}.", staff.Id, level);
+                }
 
             }
             return new BaseResponse

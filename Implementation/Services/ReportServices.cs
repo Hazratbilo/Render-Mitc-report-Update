@@ -9,6 +9,7 @@ using MITCRMS.Models.DTOs.Report;
 using MITCRMS.Models.Entities;
 using MITCRMS.Models.Enum;
 using MITCRMS.Persistence.Context;
+using MITCRMS.Persistence.Helper;
 
 
 
@@ -99,6 +100,8 @@ namespace MITCRMS.Implementation.Services
                 return new BaseResponse<bool> { Status = false, Message = "User not found" };
             }
 
+            var (reportingYear, reportingWeek) = ReportingWeekHelper.GetCurrentReportingWeek();
+
             var report = new Report
             {
 
@@ -106,6 +109,8 @@ namespace MITCRMS.Implementation.Services
                 Tittle = request.Tittle,
                 Content = request.Content,
                 FileUrl = fileUrl ?? string.Empty,
+                Year = reportingYear,
+                WeekNumber = reportingWeek,
                 Status = ReportStatus.Pending,
                 DateCreated = DateTime.UtcNow
             };
@@ -190,6 +195,7 @@ namespace MITCRMS.Implementation.Services
                 FileUrl= r.FileUrl,
                 //ApprovedByAdminId = r.ApprovedByAdminId,
                 UserId = r.UserID,
+                DepartmentId = r.User?.DepartmentId,
                 User = r.User != null ? new Models.DTOs.Users.UserDto
                 {
                     Id = r.User.Id,
@@ -261,6 +267,8 @@ namespace MITCRMS.Implementation.Services
                 Data = new ReportDto
                 {
                     Id = getNote.Id,
+                    UserId = getNote.UserID,
+                    DepartmentId = getNote.User?.DepartmentId,
                     Tittle = getNote.Tittle,
                     FullName = getNote.User != null ? getNote.User.FullName() : string.Empty,
                     DepartmentName = getNote.User?.Department?.DepartmentName ?? string.Empty,

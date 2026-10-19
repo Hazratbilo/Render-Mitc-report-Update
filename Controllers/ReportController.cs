@@ -55,7 +55,7 @@ namespace MITCRMS.Controllers
                 var hodId = currentUser.Id;
                 var hodall = await _reportServices.GetUserReportByIdAsync(hodId, cancellationToken);
 
-                var hodReports = (hodall.Data ?? Enumerable.Empty<ReportDto>()).Where(r => r.Id == hodId);
+                var hodReports = (hodall.Data ?? Enumerable.Empty<ReportDto>()).Where(r => r.UserId == hodId);
                 return View(hodReports);
 
             }
@@ -113,14 +113,25 @@ namespace MITCRMS.Controllers
                 }
 
 
-                var extension = Path.GetExtension(file.FileName);
-                var fileName = $"{Guid.NewGuid()}{extension.Replace(",", ".")}";
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (extension is not (".pdf" or ".png" or ".jpg" or ".jpeg"))
+                {
+                    TempData["Error"] = "Attachments must be PDF, PNG, or JPG files.";
+                    return RedirectToAction(nameof(CreateReport));
+                }
+                if (file.Length > 10 * 1024 * 1024)
+                {
+                    TempData["Error"] = "Attachments must be 10 MB or smaller.";
+                    return RedirectToAction(nameof(CreateReport));
+                }
+
+                var fileName = $"{Guid.NewGuid()}{extension}";
                 var fullPath = Path.Combine(uploadsPath, fileName);
 
                 using var stream = new FileStream(fullPath, FileMode.Create);
                 await file.CopyToAsync(stream);
 
-                fileUrl = $"{Request.Scheme}://{Request.Host}/reports/{fileName}";
+                fileUrl = $"/reports/{fileName}";
 
             }
             var result = await _reportServices.CreateReportAsync(fileUrl, model, userId, role);
@@ -231,16 +242,21 @@ namespace MITCRMS.Controllers
         [HttpGet]
         public async Task<IActionResult> DeleteReport(Guid id)
         {
-            var dept = await _reportServices.GetReportById(id);
-            if (dept == null || !dept.Status) return NotFound();
+            var report = await _reportServices.GetReportById(id);
+            if (report == null || !report.Status || report.Data == null) return NotFound();
+            if (!CanAccessReport(report.Data)) return Forbid();
 
-            return View("DeleteReport",dept);
+            return View("DeleteReport", report);
         }
 
         [HttpPost, ActionName("DeleteReport")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteReportConfirmed(Guid id)
         {
+            var report = await _reportServices.GetReportById(id);
+            if (report == null || !report.Status || report.Data == null) return NotFound();
+            if (!CanAccessReport(report.Data)) return Forbid();
+
             await _reportServices.DeleteReport(id);
             return RedirectToAction("GetMyReports");
         }
@@ -248,17 +264,18 @@ namespace MITCRMS.Controllers
 
         public async Task<IActionResult> Details(Guid id)
         {
-            var department = await _reportServices.GetReportById(id);
-            if (department == null)
-            {
-                throw new Exception("Request not found!");
-            }
+            var report = await _reportServices.GetReportById(id);
+            if (report == null || !report.Status || report.Data == null) return NotFound();
+            if (!CanAccessReport(report.Data)) return Forbid();
 
-            return View(department);
+            return View(report);
         }
         public async Task<IActionResult> DownloadPdf(Guid id)
         {
             var report = await _reportServices.GetReportById(id);
+            if (report == null || !report.Status || report.Data == null) return NotFound();
+            if (!CanAccessReport(report.Data)) return Forbid();
+
             using var ms = new MemoryStream();
             using var writer = new PdfWriter(ms);
             using var pdf = new PdfDocument(writer);
@@ -273,8 +290,8 @@ namespace MITCRMS.Controllers
 
             if (!string.IsNullOrEmpty(report.Data.FileUrl))
             {
-                var filePath = report.Data.FileUrl;
-                var extension = System.IO.Path.GetExtension(filePath).ToLower();
+                var filePath = GetLocalAttachmentPath(report.Data.FileUrl);
+                var extension = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
 
                 try
                 {
@@ -292,13 +309,13 @@ namespace MITCRMS.Controllers
                     else
                     {
                         var link = new Link("Click here to view attachment",
-                            PdfAction.CreateURI(report.Data.FileUrl)).SetFontColor(ColorConstants.BLUE);
+                            PdfAction.CreateURI(new Uri(new Uri($"{Request.Scheme}://{Request.Host}"), report.Data.FileUrl).ToString())).SetFontColor(ColorConstants.BLUE);
                         document.Add(new Paragraph().Add(link));
                     }
                 }
-                catch(Exception ex)
+                catch(Exception)
                 {
-                    document.Add(new Paragraph($"[Error loading attachment: {ex.Message}]")).SetFontColor(ColorConstants.RED);
+                    document.Add(new Paragraph("[Attachment could not be added to this PDF]")).SetFontColor(ColorConstants.RED);
                 }
             }
 
@@ -315,6 +332,40 @@ namespace MITCRMS.Controllers
             foreach (var c in System.IO.Path.GetInvalidFileNameChars())
                 input = input.Replace(c, '-');
             return input;
+        }
+
+        private string GetLocalAttachmentPath(string? fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl))
+            {
+                throw new FileNotFoundException("No attachment path was saved for this report.");
+            }
+
+            var path = Uri.TryCreate(fileUrl, UriKind.Absolute, out var absoluteUri)
+                ? absoluteUri.AbsolutePath
+                : fileUrl;
+            var fileName = Path.GetFileName(Uri.UnescapeDataString(path));
+            var reportsRoot = Path.GetFullPath(Path.Combine(_env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot"), "reports"));
+            var attachmentPath = Path.GetFullPath(Path.Combine(reportsRoot, fileName));
+            if (!attachmentPath.StartsWith(reportsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Invalid attachment path.");
+            }
+
+            return attachmentPath;
+        }
+
+        private bool CanAccessReport(ReportDto report)
+        {
+            if (User.IsInRole("SuperAdmin")) return true;
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (Guid.TryParse(userId, out var currentUserId) && report.UserId == currentUserId) return true;
+
+            var departmentId = User.FindFirstValue("DepartmentId");
+            return User.IsInRole("Hod")
+                && Guid.TryParse(departmentId, out var currentDepartmentId)
+                && report.DepartmentId == currentDepartmentId;
         }
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetAllReports(string? status, string? search)

@@ -2,7 +2,7 @@ services:
   - type: web
     name: Render-Mitc-report-Update
     env: docker
-    plan: starter
+    plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
     autoDeploy: true

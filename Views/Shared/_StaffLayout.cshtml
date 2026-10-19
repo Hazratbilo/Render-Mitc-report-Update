@@ -70,10 +70,12 @@
                     <span class="material-symbols-outlined">post_add</span>
                     <span>Create Report</span>
                 </a> *@
-                <a asp-controller="User" asp-action="Logout" class="staff-portal-nav-link">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span>Logout</span>
-                </a>
+                <form asp-controller="User" asp-action="Logout" method="post">
+                    <button type="submit" class="staff-portal-nav-link">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span>Logout</span>
+                    </button>
+                </form>
             </div>
         </aside>
 

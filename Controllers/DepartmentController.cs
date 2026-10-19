@@ -29,6 +29,7 @@ namespace MITCRMS.Controllers
             return View(response.Data);
         }
         [HttpGet]
+        [Authorize(Roles = "SuperAdmin")]
         public IActionResult CreateDepartment()
         {
             return View();
@@ -80,6 +81,7 @@ namespace MITCRMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
             var deleteResponse = await _departmentServices.DeleteDepartment(id);

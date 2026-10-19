@@ -134,6 +134,8 @@ namespace MITCRMS.Controllers
             }
 
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
@@ -328,6 +330,7 @@ namespace MITCRMS.Controllers
 
         [HttpPost, ActionName("DeleteUser")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> DeleteUserConfirmed(Guid id)
         {
             await _userService.DeleteUser(id);
@@ -335,6 +338,7 @@ namespace MITCRMS.Controllers
         }
 
 
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Details(Guid id)
         {
             var response = await _userService.GetUserById(id);

@@ -64,10 +64,12 @@
                     <span class="material-symbols-outlined">apartment</span>
                     <span>New Department</span>
                 </a>
-                <a asp-controller="User" asp-action="Logout" class="admin-portal-nav-link">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span>Logout</span>
-                </a>
+                <form asp-controller="User" asp-action="Logout" method="post">
+                    <button type="submit" class="admin-portal-nav-link">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span>Logout</span>
+                    </button>
+                </form>
             </div>
         </aside>
 

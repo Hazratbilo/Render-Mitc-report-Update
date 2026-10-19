@@ -95,6 +95,23 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<MitcrmsContext>();
     dbContext.Database.Migrate();
+
+    // The initial migration contains a public, fixed password hash for this seeded account.
+    // Replace that legacy hash exactly once with a secret supplied through Render's environment.
+    const string legacySuperAdminPasswordHash = "AQAAAAIAAYagAAAAEJjieFsJGM2Xgr+WpuS3juOABbBCvbqSvpym4WzP/SDMuvGz6qH+EFgm19l8SUHUGA==";
+    var superAdmin = dbContext.Set<User>().SingleOrDefault(user => user.Email == "Admin001@gmail.com");
+    if (superAdmin?.PasswordHash == legacySuperAdminPasswordHash)
+    {
+        var bootstrapPassword = builder.Configuration["MITCRMSSettings:BootstrapAdminPassword"];
+        if (string.IsNullOrWhiteSpace(bootstrapPassword))
+        {
+            throw new InvalidOperationException(
+                "MITCRMSSettings:BootstrapAdminPassword must be configured to secure the seeded super-admin account.");
+        }
+
+        superAdmin.PasswordHash = new PasswordHasher<User>().HashPassword(superAdmin, bootstrapPassword);
+        dbContext.SaveChanges();
+    }
 }
 
 // Error handling
