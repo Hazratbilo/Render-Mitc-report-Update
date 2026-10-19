@@ -222,9 +222,11 @@ namespace MITCRMS.Controllers
             if (!invite.Status)
             {
                 ViewBag.Failed = invite.Message;
+                ViewBag.ValidInvite = false;
                 return View(new CompleteStaffSignupRequestModel { Token = token });
             }
 
+            ViewBag.ValidInvite = true;
             return View(invite.Data);
         }
 
@@ -235,9 +237,11 @@ namespace MITCRMS.Controllers
             if (!invite.Status)
             {
                 ViewBag.Failed = invite.Message;
+                ViewBag.ValidInvite = false;
                 return View(model);
             }
 
+            ViewBag.ValidInvite = true;
             model.Email = invite.Data.Email;
             model.FullName = invite.Data.FullName;
 
