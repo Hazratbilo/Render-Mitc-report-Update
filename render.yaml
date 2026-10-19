@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: MITCRMS
+    name: Render-Mitc-report-Update
     env: docker
     plan: starter
     region: oregon
